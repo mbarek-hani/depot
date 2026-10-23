@@ -1,0 +1,278 @@
+<?php
+
+namespace App\Services;
+
+use App\Enums\StockMovementType;
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\StockMovement;
+use App\Support\Format;
+use App\Support\Settings;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
+
+class ReportService
+{
+    public function build(string $type, array $filters = []): array
+    {
+        $categoryId = isset($filters['category_id']) && $filters['category_id'] !== '' ? (int) $filters['category_id'] : null;
+        $status = $filters['status'] ?? 'all';
+
+        return match ($type) {
+            'movements' => $this->movementsReport($categoryId, $status, $filters['from'] ?? null, $filters['to'] ?? null),
+            'low-stock' => $this->lowStockReport($categoryId),
+            'expiry' => $this->expiryReport($categoryId, $status),
+            'categories' => $this->categoriesReport($categoryId),
+            default => $this->stockReport($categoryId, $status),
+        };
+    }
+
+    public static function types(): array
+    {
+        return [
+            'stock' => 'جرد المخزون',
+            'movements' => 'حركات المخزون',
+            'low-stock' => 'المخزون المنخفض',
+            'expiry' => 'تواريخ الصلاحية',
+            'categories' => 'ملخص الأصناف',
+        ];
+    }
+
+    protected function stockReport(?int $categoryId, string $status): array
+    {
+        $products = Product::query()
+            ->with('category')
+            ->when($categoryId, fn (Builder $query) => $query->where('category_id', $categoryId))
+            ->filterStatus($status === 'all' ? null : $status)
+            ->orderBy('name')
+            ->get();
+
+        return [
+            'type' => 'stock',
+            'title' => 'تقرير جرد المخزون',
+            'description' => 'صورة شاملة للمنتجات المتوفرة في المستودع مع الكميات والقيم المالية.',
+            'period' => 'حتى تاريخ '.Format::longDate(now()),
+            'summary' => [
+                ['label' => 'إجمالي المنتجات', 'value' => number_format($products->count()), 'tone' => 'brand'],
+                ['label' => 'إجمالي الكميات', 'value' => Format::quantity($products->sum(fn ($product) => (float) $product->quantity)), 'tone' => 'info'],
+                ['label' => 'قيمة المخزون بالتكلفة', 'value' => Format::money($products->sum(fn ($product) => $product->stockCostValue())), 'tone' => 'success'],
+                ['label' => 'القيمة المتوقعة للبيع', 'value' => Format::money($products->sum(fn ($product) => $product->stockSaleValue())), 'tone' => 'warning'],
+            ],
+            'columns' => ['المنتج', 'الرمز', 'الصنف', 'الكمية', 'الوحدة', 'حالة المخزون', 'الصلاحية', 'قيمة التكلفة'],
+            'rows' => $products->map(fn (Product $product) => [
+                $product->name,
+                $product->sku,
+                $product->category?->name ?? '—',
+                Format::quantity($product->quantity),
+                $product->unit,
+                $product->stockStatus()->label(),
+                $product->expiry_date ? Format::date($product->expiry_date).' · '.$product->expiryStatus()->label() : 'بدون تاريخ',
+                Format::money($product->stockCostValue()),
+            ])->all(),
+            'totals' => [
+                'الكميات' => Format::quantity($products->sum(fn ($product) => (float) $product->quantity)),
+                'قيمة التكلفة' => Format::money($products->sum(fn ($product) => $product->stockCostValue())),
+                'قيمة البيع' => Format::money($products->sum(fn ($product) => $product->stockSaleValue())),
+            ],
+        ];
+    }
+
+    protected function movementsReport(?int $categoryId, string $status, ?Carbon $from, ?Carbon $to): array
+    {
+        $from ??= now()->startOfMonth();
+        $to ??= now();
+
+        $movements = StockMovement::query()
+            ->with(['product', 'user'])
+            ->whereBetween('occurred_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->when($categoryId, fn (Builder $query) => $query->whereHas('product', fn (Builder $query) => $query->where('category_id', $categoryId)))
+            ->when(in_array($status, ['in', 'out'], true), fn (Builder $query) => $query->where('type', $status))
+            ->latest('occurred_at')
+            ->get();
+
+        $in = $movements->where('type', StockMovementType::In)->sum(fn ($movement) => (float) $movement->quantity);
+        $out = $movements->where('type', StockMovementType::Out)->sum(fn ($movement) => (float) $movement->quantity);
+
+        return [
+            'type' => 'movements',
+            'title' => 'تقرير حركات المخزون',
+            'description' => 'جميع عمليات الإدخال والإخراج المسجلة خلال الفترة المحددة.',
+            'period' => Format::longDate($from).' — '.Format::longDate($to),
+            'summary' => [
+                ['label' => 'عدد الحركات', 'value' => number_format($movements->count()), 'tone' => 'brand'],
+                ['label' => 'إجمالي الإدخال', 'value' => Format::quantity($in), 'tone' => 'success'],
+                ['label' => 'إجمالي الإخراج', 'value' => Format::quantity($out), 'tone' => 'danger'],
+                ['label' => 'صافي الحركة', 'value' => Format::quantity($in - $out), 'tone' => 'info'],
+            ],
+            'columns' => ['التاريخ', 'المنتج', 'النوع', 'الكمية', 'السبب', 'المستخدم', 'ملاحظات'],
+            'rows' => $movements->map(fn (StockMovement $movement) => [
+                Format::dateTime($movement->occurred_at),
+                $movement->product?->name ?? 'منتج محذوف',
+                $movement->type->label(),
+                $movement->type->sign().Format::quantity($movement->quantity),
+                $movement->reason->label(),
+                $movement->user?->name ?? '—',
+                $movement->note ?: '—',
+            ])->all(),
+            'totals' => [
+                'عدد الحركات' => number_format($movements->count()),
+                'إجمالي الإدخال' => Format::quantity($in),
+                'إجمالي الإخراج' => Format::quantity($out),
+            ],
+        ];
+    }
+
+    protected function lowStockReport(?int $categoryId): array
+    {
+        $products = Product::query()
+            ->with('category')
+            ->when($categoryId, fn (Builder $query) => $query->where('category_id', $categoryId))
+            ->lowOrOutOfStock()
+            ->orderBy('quantity')
+            ->get();
+
+        $outCount = $products->filter(fn (Product $product) => (float) $product->quantity <= 0)->count();
+        $shortage = $products->sum(fn (Product $product) => max(0, $product->lowStockThresholdValue() - (float) $product->quantity));
+
+        return [
+            'type' => 'low-stock',
+            'title' => 'تقرير المخزون المنخفض',
+            'description' => 'المنتجات التي وصلت إلى حد المخزون المنخفض أو نفدت بالكامل.',
+            'period' => 'حتى تاريخ '.Format::longDate(now()),
+            'summary' => [
+                ['label' => 'منتجات تحتاج متابعة', 'value' => number_format($products->count()), 'tone' => 'warning'],
+                ['label' => 'منتجات نفدت', 'value' => number_format($outCount), 'tone' => 'danger'],
+                ['label' => 'النقص الإجمالي عن الحد', 'value' => Format::quantity($shortage), 'tone' => 'info'],
+                ['label' => 'حد المخزون الافتراضي', 'value' => Format::quantity(Settings::lowStockThreshold()), 'tone' => 'neutral'],
+            ],
+            'columns' => ['المنتج', 'الرمز', 'الصنف', 'الكمية الحالية', 'الحد الأدنى', 'الوحدة', 'الحالة'],
+            'rows' => $products->map(fn (Product $product) => [
+                $product->name,
+                $product->sku,
+                $product->category?->name ?? '—',
+                Format::quantity($product->quantity),
+                Format::quantity($product->lowStockThresholdValue()),
+                $product->unit,
+                $product->stockStatus()->label(),
+            ])->all(),
+            'totals' => [
+                'عدد المنتجات' => number_format($products->count()),
+                'إجمالي الكمية المتبقية' => Format::quantity($products->sum(fn ($product) => (float) $product->quantity)),
+            ],
+        ];
+    }
+
+    protected function expiryReport(?int $categoryId, string $status): array
+    {
+        $warningDays = Settings::expiryWarningDays();
+
+        $products = Product::query()
+            ->with('category')
+            ->when($categoryId, fn (Builder $query) => $query->where('category_id', $categoryId))
+            ->whereNotNull('expiry_date')
+            ->when($status === 'expired', fn (Builder $query) => $query->expired())
+            ->when($status === 'expiring', fn (Builder $query) => $query->expiringSoon())
+            ->when(! in_array($status, ['expired', 'expiring'], true), fn (Builder $query) => $query
+                ->whereDate('expiry_date', '<=', today()->addDays($warningDays)))
+            ->orderBy('expiry_date')
+            ->get();
+
+        $expired = $products->filter(fn (Product $product) => $product->expiryStatus()->value === 'expired');
+        $soon = $products->filter(fn (Product $product) => $product->expiryStatus()->value === 'expiring');
+
+        return [
+            'type' => 'expiry',
+            'title' => 'تقرير تواريخ الصلاحية',
+            'description' => "المنتجات المنتهية أو التي تنتهي صلاحيتها خلال {$warningDays} يومًا.",
+            'period' => 'حتى تاريخ '.Format::longDate(now()),
+            'summary' => [
+                ['label' => 'منتجات منتهية', 'value' => number_format($expired->count()), 'tone' => 'danger'],
+                ['label' => 'قريبة الانتهاء', 'value' => number_format($soon->count()), 'tone' => 'warning'],
+                ['label' => 'الكميات المعرضة للخطر', 'value' => Format::quantity($products->sum(fn ($product) => (float) $product->quantity)), 'tone' => 'info'],
+                ['label' => 'مدة التنبيه', 'value' => $warningDays.' يوم', 'tone' => 'neutral'],
+            ],
+            'columns' => ['المنتج', 'الرمز', 'الصنف', 'تاريخ الانتهاء', 'المتبقي', 'الكمية', 'الحالة'],
+            'rows' => $products->map(fn (Product $product) => [
+                $product->name,
+                $product->sku,
+                $product->category?->name ?? '—',
+                Format::date($product->expiry_date),
+                $this->remainingLabel($product->daysUntilExpiry()),
+                Format::quantity($product->quantity).' '.$product->unit,
+                $product->expiryStatus()->label(),
+            ])->all(),
+            'totals' => [
+                'عدد المنتجات' => number_format($products->count()),
+                'إجمالي الكميات' => Format::quantity($products->sum(fn ($product) => (float) $product->quantity)),
+            ],
+        ];
+    }
+
+    protected function categoriesReport(?int $categoryId): array
+    {
+        $categories = Category::query()
+            ->with(['products' => fn ($query) => $query->select('id', 'category_id', 'name', 'quantity', 'cost_price', 'sale_price')])
+            ->when($categoryId, fn (Builder $query) => $query->whereKey($categoryId))
+            ->orderBy('name')
+            ->get();
+
+        $rows = $categories->map(function (Category $category) {
+            $quantity = $category->products->sum(fn (Product $product) => (float) $product->quantity);
+            $cost = $category->products->sum(fn (Product $product) => $product->stockCostValue());
+            $sale = $category->products->sum(fn (Product $product) => $product->stockSaleValue());
+
+            return [
+                'name' => $category->name,
+                'cells' => [
+                    $category->name,
+                    number_format($category->products->count()),
+                    Format::quantity($quantity),
+                    Format::money($cost),
+                    Format::money($sale),
+                ],
+                'quantity' => $quantity,
+                'cost' => $cost,
+                'sale' => $sale,
+                'count' => $category->products->count(),
+            ];
+        });
+
+        return [
+            'type' => 'categories',
+            'title' => 'تقرير ملخص الأصناف',
+            'description' => 'إجمالي الكميات والقيم المالية لكل صنف في المستودع.',
+            'period' => 'حتى تاريخ '.Format::longDate(now()),
+            'summary' => [
+                ['label' => 'عدد الأصناف', 'value' => number_format($categories->count()), 'tone' => 'brand'],
+                ['label' => 'عدد المنتجات', 'value' => number_format($rows->sum('count')), 'tone' => 'info'],
+                ['label' => 'إجمالي الكميات', 'value' => Format::quantity($rows->sum('quantity')), 'tone' => 'success'],
+                ['label' => 'قيمة المخزون', 'value' => Format::money($rows->sum('cost')), 'tone' => 'warning'],
+            ],
+            'columns' => ['الصنف', 'عدد المنتجات', 'إجمالي الكمية', 'قيمة التكلفة', 'قيمة البيع'],
+            'rows' => $rows->map(fn (array $row) => $row['cells'])->all(),
+            'totals' => [
+                'الأصناف' => number_format($categories->count()),
+                'الكميات' => Format::quantity($rows->sum('quantity')),
+                'قيمة التكلفة' => Format::money($rows->sum('cost')),
+                'قيمة البيع' => Format::money($rows->sum('sale')),
+            ],
+        ];
+    }
+
+    protected function remainingLabel(?int $days): string
+    {
+        if ($days === null) {
+            return '—';
+        }
+
+        if ($days < 0) {
+            return 'متأخر '.abs($days).' يوم';
+        }
+
+        if ($days === 0) {
+            return 'ينتهي اليوم';
+        }
+
+        return $days.' يوم';
+    }
+}
