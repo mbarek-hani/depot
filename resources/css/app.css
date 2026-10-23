@@ -2,8 +2,103 @@
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-display: 'Tajawal', 'Cairo', ui-sans-serif, system-ui, sans-serif;
+
+    --color-brand-50: #fffdeb;
+    --color-brand-100: #fef9c3;
+    --color-brand-200: #fef08a;
+    --color-brand-300: #fde047;
+    --color-brand-400: #facc15;
+    --color-brand-500: #eab308;
+    --color-brand-600: #ca8a04;
+    --color-brand-700: #a16207;
+    --color-brand-800: #854d0e;
+    --color-brand-900: #713f12;
+    --color-brand-950: #422006;
+
+    --color-maroon-50: #fdf3f3;
+    --color-maroon-100: #fbe4e4;
+    --color-maroon-500: #a83232;
+    --color-maroon-600: #8f2626;
+    --color-maroon-700: #7a2020;
+    --color-maroon-800: #611d1d;
+    --color-maroon-900: #4b1a1a;
+
+    --color-cream-50: #fdfbf7;
+    --color-cream-100: #faf6ee;
+    --color-cream-200: #f2ebdd;
+
+    --color-night-800: #1c1a16;
+    --color-night-900: #151310;
+    --color-night-950: #0f0e0c;
+
+    --shadow-card: 0 1px 2px rgb(28 26 22 / 0.04), 0 8px 24px -16px rgb(28 26 22 / 0.18);
+    --shadow-pop: 0 12px 40px -12px rgb(28 26 22 / 0.28);
+}
+
+@layer base {
+    [x-cloak] {
+        display: none !important;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply bg-cream-100 text-stone-900 antialiased dark:bg-night-950 dark:text-stone-100;
+        font-feature-settings: 'kern';
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        @apply font-display font-bold tracking-tight;
+    }
+
+    ::selection {
+        @apply bg-brand-300 text-stone-950;
+    }
+
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-brand-500;
+    }
+
+    input[type='number'] {
+        direction: ltr;
+        text-align: start;
+    }
+}
+
+@layer utilities {
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-stone-300) transparent;
+    }
+
+    .dark .scrollbar-thin {
+        scrollbar-color: var(--color-stone-700) transparent;
+    }
+
+    .tabular {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
 }
