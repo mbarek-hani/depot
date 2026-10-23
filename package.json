@@ -4,16 +4,25 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "format": "prettier --write \"resources/**/*.{css,js,json}\" \"package.json\"",
+        "format:check": "prettier --check \"resources/**/*.{css,js,json}\" \"package.json\""
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
         "concurrently": "^10.0.3",
         "laravel-vite-plugin": "^3.1",
+        "prettier": "^3.9.10",
+        "prettier-plugin-blade": "^3.3.3",
+        "prettier-plugin-tailwindcss": "^0.8.1",
         "tailwindcss": "^4.0.0",
         "vite": "^8.0.0"
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1"
+    },
+    "dependencies": {
+        "alpinejs": "^3.17.5",
+        "chart.js": "^4.6.1"
     }
 }
