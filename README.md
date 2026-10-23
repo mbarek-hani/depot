@@ -1,58 +1,139 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# مستودع جمعية تحدي الإعاقة
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+نظام عربي متكامل لإدارة مخزون المواد الغذائية والاستهلاكية، مبني بـ Laravel وBlade وTailwind CSS، بواجهة RTL متجاوبة ومظهر فاتح/داكن.
 
-## About Laravel
+## المزايا
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- إدارة المنتجات والأصناف مع رمز تلقائي لكل منتج.
+- تسجيل حركات الإدخال والإخراج مع الكمية قبل/بعد والسبب والمستخدم.
+- تتبع تاريخ صلاحية واحد لكل منتج وتنبيهات المخزون المنخفض.
+- لوحة تحكم بإحصاءات ورسوم بيانية وحركات حديثة.
+- تنبيهات داخل التطبيق مع جرس إشعارات وصفحة إشعارات.
+- تقارير جرد وحركات ومخزون منخفض وصلاحية وملخص أصناف.
+- تنزيل التقارير بصيغة PDF عربية.
+- صلاحيات: مدير النظام يدير كل شيء، والمستخدم للعرض وتنزيل التقارير فقط.
+- إعدادات للنظام والعملة وحدود التنبيهات والمظهر والحساب الشخصي.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## التقنيات
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.3 و Laravel 13
+- Blade Components و Alpine.js
+- Tailwind CSS 4 و Vite
+- SQLite محليًا، مع إمكانية التحويل إلى MySQL
+- mPDF لتوليد تقارير PDF عربية
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## التشغيل
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+touch database/database.sqlite
+php artisan key:generate
+php artisan migrate --seed
+npm install
+npm run build
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+الرابط الافتراضي: `http://localhost:8000`
 
-## Contributing
+### إعداد البيئة
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+تأكد من القيم التالية في `.env`:
 
-## Code of Conduct
+```env
+APP_URL=http://localhost:8000
+APP_TIMEZONE=Asia/Riyadh
+APP_LOCALE=ar
+DB_CONNECTION=sqlite
+MAIL_MAILER=log
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+عند استخدام MySQL، غيّر `DB_CONNECTION` وقيم `DB_*` ثم نفّذ `php artisan migrate --seed`. جميع الترحيلات متوافقة مع MySQL.
 
-## Security Vulnerabilities
+## إنشاء مدير النظام
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+لا يوجد تسجيل عام. تُنشأ حسابات مديري النظام فقط عبر الأمر:
 
-## License
+```bash
+php artisan admin:create
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+أو تمرير البيانات مباشرة:
+
+```bash
+php artisan admin:create --name="مدير النظام" --email="admin@example.com" --password="Password123"
+```
+
+الحساب يُنشأ غير مفعّل حتى تأكيد البريد الإلكتروني. مع `MAIL_MAILER=log` سيُطبع رابط التأكيد في الطرفية، ويمكن أيضًا العثور عليه في `storage/logs/laravel.log`.
+
+## الحسابات التجريبية
+
+بيانات العرض تُنشأ مع `php artisan migrate --seed`:
+
+| البريد | كلمة المرور | الدور |
+| --- | --- | --- |
+| `viewer@example.com` | `password` | مستخدم عرض |
+| `viewer2@example.com` | `password` | مستخدم عرض |
+
+كلمة مرور المدير يجب أن تتكون من 8 أحرف على الأقل وتتضمن حرفًا ورقمًا.
+
+لا ينشئ البذار أي حساب مدير، حفاظًا على قاعدة أن مدير النظام يُنشأ عبر الأمر فقط. لحسابات المستخدمين، استخدم صفحة «المستخدمون» بعد الدخول كمدير.
+
+## الشعار
+
+ضع شعار الجمعية في:
+
+```text
+public/images/logo.png
+```
+
+يدعم النظام أيضًا `logo.svg` و`logo.jpg` و`logo.jpeg`. في حال عدم وجود أي منها يظهر رمز بديل أنيق. يُستخدم الشعار في الواجهة ورأس تقارير PDF.
+
+## التنبيهات
+
+- الحد الافتراضي للمخزون قابل للتعديل من الإعدادات، مع إمكانية تجاوزه لكل منتج.
+- مدة التنبيه قبل انتهاء الصلاحية قابلة للتعديل من الإعدادات.
+- التنبيهات مخزنة داخل قاعدة البيانات وتظهر في الجرس وصفحة الإشعارات.
+- يُمنع تكرار التنبيه غير المقروء لنفس المنتج ونفس النوع، ويُغلق تلقائيًا عند زوال السبب.
+- يمكن تشغيل الفحص يدويًا:
+
+```bash
+php artisan stock:check-alerts
+```
+
+- مجدول يوميًا الساعة 08:00 بتوقيت `APP_TIMEZONE`. شغّل المجدول في الإنتاج:
+
+```bash
+php artisan schedule:work
+```
+
+## التقارير
+
+- جرد المخزون
+- حركات المخزون (مع فلترة الفترة)
+- المخزون المنخفض
+- تواريخ الصلاحية
+- ملخص الأصناف
+
+تتوفر جميع التقارير للمستخدم العادي للعرض والتنزيل بصيغة PDF.
+
+## الاختبارات والجودة
+
+```bash
+php artisan test
+npm run build
+vendor/bin/pint --test
+npm run format:check
+```
+
+## البنية المختصرة
+
+- `app/Http/Controllers` — وحدات التحكم.
+- `app/Models` — المستخدمون والأصناف والمنتجات والحركات.
+- `app/Services` — منطق المخزون والتنبيهات والتقارير.
+- `app/Support` — الإعدادات والتنسيقات.
+- `resources/views` — واجهات Blade والمكونات.
+- `resources/js` — المظهر والرسوم والإشعارات.
+- `database/seeders/DemoDataSeeder.php` — بيانات العرض.
+- `tests/Feature` — اختبارات الصفحات والصلاحيات والمخزون والتقارير.
