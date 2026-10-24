@@ -19,39 +19,39 @@ use function Laravel\Prompts\warning;
 class CreateAdminCommand extends Command
 {
     protected $signature = 'admin:create
-                            {--name= : اسم المدير}
-                            {--email= : البريد الإلكتروني}
-                            {--password= : كلمة المرور}';
+                            {--name= : the name of the admin}
+                            {--email= : the email of the admin}
+                            {--password= : the password of the admin}';
 
-    protected $description = 'إنشاء حساب مدير نظام جديد مع تفعيل التحقق من البريد الإلكتروني';
+    protected $description = 'Create a new admin account';
 
     public function handle(): int
     {
         $name = $this->option('name') ?: text(
-            label: 'اسم المدير',
-            placeholder: 'مثال: محمد الأحمد',
+            label: 'Name',
+            placeholder: 'ex: admin',
             required: true,
         );
 
         $email = $this->option('email') ?: text(
-            label: 'البريد الإلكتروني',
+            label: 'Email',
             placeholder: 'admin@example.com',
             required: true,
             validate: fn (string $value) => filter_var($value, FILTER_VALIDATE_EMAIL)
                 ? null
-                : 'يرجى إدخال بريد إلكتروني صالح.',
+                : 'Please enter a valid email address',
         );
 
         $email = strtolower(trim($email));
 
         if (User::where('email', $email)->exists()) {
-            error('يوجد حساب مسجل بهذا البريد الإلكتروني بالفعل.');
+            error('Email already taken');
 
             return self::FAILURE;
         }
 
         $password = $this->option('password') ?: password(
-            label: 'كلمة المرور',
+            label: 'Password',
             required: true,
             validate: fn (string $value) => $this->passwordError($value),
         );
@@ -62,11 +62,6 @@ class CreateAdminCommand extends Command
                 'name' => ['required', 'string', 'max:120'],
                 'email' => ['required', 'email', 'max:190', 'unique:users,email'],
                 'password' => ['required', 'string', Password::min(8)->letters()->numbers()],
-            ],
-            [
-                'name.required' => 'اسم المدير مطلوب.',
-                'email.unique' => 'يوجد حساب مسجل بهذا البريد الإلكتروني بالفعل.',
-                'password.min' => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل.',
             ],
         );
 
@@ -90,8 +85,8 @@ class CreateAdminCommand extends Command
 
         $user->sendEmailVerificationNotification();
 
-        info('تم إنشاء حساب المدير بنجاح: '.$user->email);
-        warning('لم يتم تفعيل الحساب بعد. يجب تأكيد البريد الإلكتروني قبل تسجيل الدخول.');
+        info('Admin account was created successfully!'.$user->email);
+        warning('The account has not been verified yet. You should confirm the email address before logging in.');
 
         if (config('mail.default') === 'log') {
             $path = URL::temporarySignedRoute(
@@ -107,7 +102,6 @@ class CreateAdminCommand extends Command
             $url = url($path);
 
             $this->newLine();
-            $this->line('بيئة التطوير تستخدم سجل البريد. رابط التأكيد:');
             $this->line($url);
         }
 
