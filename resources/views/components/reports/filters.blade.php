@@ -43,8 +43,8 @@
         @endif
 
         <div class="flex items-center gap-2 lg:col-span-3">
-            <x-ui.button type="submit" icon="filter" class="w-full">تحديث التقرير</x-ui.button>
-            <x-ui.button :href="route('reports.index', ['type' => $report['type']])" variant="ghost">مسح</x-ui.button>
+            <x-ui.button type="submit" icon="filter" class="flex-1">تحديث التقرير</x-ui.button>
+            <x-ui.button :href="route('reports.index', ['type' => $report['type']])" variant="ghost" class="shrink-0">مسح</x-ui.button>
         </div>
     </form>
 </x-ui.card>

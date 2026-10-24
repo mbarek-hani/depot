@@ -7,7 +7,7 @@
     ];
 @endphp
 
-<nav class="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 backdrop-blur-lg dark:border-night-800 dark:bg-night-900/95 lg:hidden" aria-label="التنقل السريع">
+<nav class="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg dark:border-night-800 dark:bg-night-900/95 lg:hidden" aria-label="التنقل السريع">
     <div class="grid grid-cols-5">
         @foreach ($items as $item)
             @php $isActive = request()->routeIs($item['active']); @endphp

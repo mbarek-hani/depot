@@ -25,7 +25,7 @@
             <x-ui.stat-card label="الصلاحية" :value="$product->expiry_date?->format('Y/m/d') ?? 'غير محددة'" icon="calendar" :tone="$product->expiryStatus()->tone()" :hint="$product->expiryStatus()->label()" />
         </div>
 
-        <div class="grid gap-4 xl:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
             <x-ui.card class="xl:col-span-2">
                 <div class="flex items-center justify-between gap-3">
                     <div>

@@ -20,15 +20,15 @@
 
 @php $tag = $href ? 'a' : 'div'; @endphp
 
-<{{ $tag }} @if ($href) href="{{ $href }}" @endif {{ $attributes->merge(['class' => 'group flex items-start justify-between gap-4 rounded-2xl border border-stone-200/80 bg-white p-5 shadow-card transition hover:-translate-y-0.5 hover:border-stone-300 dark:border-night-800 dark:bg-night-900 dark:hover:border-stone-700']) }}>
+<{{ $tag }} @if ($href) href="{{ $href }}" @endif {{ $attributes->merge(['class' => 'group flex min-w-0 items-start justify-between gap-3 rounded-2xl border border-stone-200/80 bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:border-stone-300 dark:border-night-800 dark:bg-night-900 dark:hover:border-stone-700 sm:gap-4 sm:p-5']) }}>
     <div class="min-w-0">
-        <p class="text-xs font-semibold text-stone-500 dark:text-stone-400">{{ $label }}</p>
-        <p class="mt-2 truncate font-display text-2xl font-extrabold tracking-tight text-stone-900 tabular dark:text-white sm:text-3xl">{{ $value }}</p>
+        <p class="text-[11px] font-semibold leading-5 text-stone-500 dark:text-stone-400 sm:text-xs">{{ $label }}</p>
+        <p class="mt-1.5 font-display text-lg font-extrabold leading-tight tracking-tight text-stone-900 tabular dark:text-white sm:mt-2 sm:text-2xl xl:text-3xl">{{ $value }}</p>
         @if ($hint)
-            <p class="mt-1.5 text-[11px] font-medium text-stone-400 dark:text-stone-500">{{ $hint }}</p>
+            <p class="mt-1 text-[10px] font-medium leading-4 text-stone-400 dark:text-stone-500 sm:mt-1.5 sm:text-[11px] sm:leading-5">{{ $hint }}</p>
         @endif
     </div>
-    <span class="flex size-11 shrink-0 items-center justify-center rounded-xl {{ $tones[$tone] }}">
-        <x-ui.icon :name="$icon" size="size-5" />
+    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl {{ $tones[$tone] }} sm:size-11">
+        <x-ui.icon :name="$icon" size="size-4 sm:size-5" />
     </span>
 </{{ $tag }}>

@@ -16,12 +16,12 @@
     />
 
     <div class="mt-6 space-y-4">
-        <div class="flex gap-2 overflow-x-auto rounded-2xl border border-stone-200/80 bg-white p-1.5 shadow-card dark:border-night-800 dark:bg-night-900">
+        <div class="flex gap-1.5 overflow-x-auto rounded-2xl border border-stone-200/80 bg-white p-1.5 shadow-card scrollbar-thin dark:border-night-800 dark:bg-night-900 sm:gap-2">
             @foreach ($tabs as $key => $item)
                 <a
                     href="{{ route('settings.index', ['tab' => $key]) }}"
                     @class([
-                        'flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-bold transition',
+                        'flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[11px] font-bold transition sm:gap-2 sm:px-4 sm:text-xs',
                         'bg-brand-400 text-night-950 shadow-sm' => $tab === $key,
                         'text-stone-500 hover:bg-stone-50 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-night-800 dark:hover:text-white' => $tab !== $key,
                     ])
@@ -93,7 +93,7 @@
         @endif
 
         @if ($tab === 'account')
-            <div class="grid gap-4 xl:grid-cols-3">
+            <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
                 <div class="space-y-4 xl:col-span-2">
                     <x-ui.card>
                         <div class="mb-5 flex items-center gap-3">

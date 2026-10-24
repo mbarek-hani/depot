@@ -17,12 +17,12 @@
     <div class="mt-6 space-y-4 sm:space-y-5">
         <x-dashboard.stats :stats="$stats" />
 
-        <div class="grid gap-4 xl:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
             <x-dashboard.movement-chart :chart="$chart" />
             <x-dashboard.category-chart :chart="$categoryChart" :total="$stats['quantity']" />
         </div>
 
-        <div class="grid gap-4 xl:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
             <x-dashboard.recent-movements :movements="$recentMovements" />
 
             <div class="space-y-4">

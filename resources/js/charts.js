@@ -102,7 +102,13 @@ function baseOptions(type) {
             : {
                   x: {
                       grid: { display: false },
-                      ticks: { color: colors.muted, font: { family: "'Cairo', sans-serif" } },
+                      ticks: {
+                          color: colors.muted,
+                          maxRotation: 0,
+                          autoSkip: true,
+                          maxTicksLimit: 6,
+                          font: { family: "'Cairo', sans-serif" },
+                      },
                   },
                   y: {
                       beginAtZero: true,

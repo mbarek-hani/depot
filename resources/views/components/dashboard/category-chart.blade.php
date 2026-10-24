@@ -10,7 +10,7 @@
 
     @if (count($chart['labels']))
         <div class="relative mx-auto mt-5 h-56 max-w-xs">
-            <canvas data-chart="doughnut" data-chart-data="{{ json_encode($chart, JSON_UNESCAPED_UNICODE) }}" aria-label="توزيع الكميات حسب الأصناف" role="img"></canvas>
+            <canvas class="max-w-full" data-chart="doughnut" data-chart-data="{{ json_encode($chart, JSON_UNESCAPED_UNICODE) }}" aria-label="توزيع الكميات حسب الأصناف" role="img"></canvas>
         </div>
         <div class="mt-4 rounded-xl bg-stone-50 p-3 text-center dark:bg-night-950">
             <p class="text-[11px] font-semibold text-stone-500 dark:text-stone-400">إجمالي الكميات</p>

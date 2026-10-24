@@ -15,6 +15,6 @@
     </div>
 
     <div class="relative mt-5 h-64 sm:h-72">
-        <canvas data-chart="bar" data-chart-data="{{ json_encode($chart, JSON_UNESCAPED_UNICODE) }}" aria-label="مخطط حركة المخزون خلال آخر سبعة أيام" role="img"></canvas>
+        <canvas class="max-w-full" data-chart="bar" data-chart-data="{{ json_encode($chart, JSON_UNESCAPED_UNICODE) }}" aria-label="مخطط حركة المخزون خلال آخر سبعة أيام" role="img"></canvas>
     </div>
 </x-ui.card>

@@ -21,8 +21,8 @@
         </div>
 
         <div class="flex items-center gap-2 lg:col-span-2">
-            <x-ui.button type="submit" icon="filter" class="w-full">تصفية</x-ui.button>
-            <x-ui.button :href="route('users.index')" variant="ghost">مسح</x-ui.button>
+            <x-ui.button type="submit" icon="filter" class="flex-1">تصفية</x-ui.button>
+            <x-ui.button :href="route('users.index')" variant="ghost" class="shrink-0">مسح</x-ui.button>
         </div>
     </form>
 </x-ui.card>

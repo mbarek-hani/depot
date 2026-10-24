@@ -4,7 +4,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="rtl" data-theme-endpoint="{{ route('settings.theme') }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#facc15">
 
@@ -39,7 +39,7 @@
         <div class="min-h-screen lg:ms-72">
             <x-layout.topbar :latest-notifications="$latestNotifications" :unread-count="$unreadCount" />
 
-            <main id="main-content" class="mx-auto w-full max-w-7xl px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-12 lg:pt-8">
+            <main id="main-content" class="mx-auto w-full max-w-7xl px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 lg:px-8 lg:pb-12 lg:pt-8">
                 <div class="mb-5 space-y-3">
                     <x-ui.flash />
                 </div>

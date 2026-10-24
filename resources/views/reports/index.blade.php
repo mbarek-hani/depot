@@ -18,7 +18,7 @@
     </x-layout.page-header>
 
     <div class="mt-6 space-y-4">
-        <div class="flex snap-x gap-2 overflow-x-auto pb-1 scrollbar-thin">
+        <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             @foreach ($types as $key => $label)
                 <a
                     href="{{ route('reports.index', array_merge($tabQuery, ['type' => $key])) }}"
