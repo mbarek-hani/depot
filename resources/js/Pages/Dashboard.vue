@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import AppLayout from '../Components/AppLayout.vue';
 import PageHeader from '../Components/PageHeader.vue';
@@ -12,6 +13,8 @@ import UiButton from '../Components/UiButton.vue';
 const props = defineProps({
     stats: { type: Object, required: true },
     chart: { type: Object, required: true },
+    period: { type: String, default: '7d' },
+    periods: { type: Array, default: () => [] },
     categoryChart: { type: Object, required: true },
     recentMovements: { type: Array, default: () => [] },
     lowStockProducts: { type: Array, default: () => [] },
@@ -22,16 +25,33 @@ const page = usePage();
 const user = page.props.auth?.user;
 
 const cards = [
-    { label: 'إجمالي المنتجات', key: 'products', hint: 'منتج مسجل', tone: 'brand', href: route('products.index') },
-    { label: 'إجمالي الكميات', key: 'quantity_formatted', hint: 'مجموع الكميات بالمخزون', tone: 'info', href: route('products.index') },
-    { label: 'مخزون منخفض', key: 'low_stock', hint: 'بحاجة إلى إعادة تعبئة', tone: 'warning', href: route('products.index', { status: 'low' }) },
-    { label: 'نفد المخزون', key: 'out_of_stock', hint: 'منتجات غير متوفرة', tone: 'danger', href: route('products.index', { status: 'out' }) },
-    { label: 'قريب الانتهاء', key: 'expiring', hint: 'خلال فترة التنبيه', tone: 'warning', href: route('products.index', { status: 'expiring' }) },
-    { label: 'منتهي الصلاحية', key: 'expired', hint: 'يحتاج مراجعة', tone: 'danger', href: route('products.index', { status: 'expired' }) },
-    { label: 'قيمة المخزون', key: 'stock_cost_formatted', hint: 'بحسب سعر التكلفة', tone: 'success', href: route('reports.index', { type: 'stock' }) },
-    { label: 'قيمة البيع المتوقعة', key: 'stock_sale_formatted', hint: 'بحسب سعر البيع', tone: 'success', href: route('reports.index', { type: 'stock' }) },
-    { label: 'حركات اليوم', key: 'movements_today', hint: 'إدخال وإخراج', tone: 'neutral', href: route('movements.index') },
+    { label: 'إجمالي المنتجات', key: 'products', hint: 'منتج مسجل', href: route('products.index') },
+    { label: 'إجمالي الكميات', key: 'quantity_formatted', hint: 'مجموع الكميات بالمخزون', href: route('products.index') },
+    { label: 'مخزون منخفض', key: 'low_stock', hint: 'بحاجة إلى إعادة تعبئة', href: route('products.index', { status: 'low' }) },
+    { label: 'نفد المخزون', key: 'out_of_stock', hint: 'منتجات غير متوفرة', href: route('products.index', { status: 'out' }) },
+    { label: 'قريب الانتهاء', key: 'expiring', hint: 'خلال فترة التنبيه', href: route('products.index', { status: 'expiring' }) },
+    { label: 'منتهي الصلاحية', key: 'expired', hint: 'يحتاج مراجعة', href: route('products.index', { status: 'expired' }) },
+    { label: 'قيمة المخزون', key: 'stock_cost_formatted', hint: 'بحسب سعر التكلفة', href: route('reports.index', { type: 'stock' }) },
+    { label: 'قيمة البيع المتوقعة', key: 'stock_sale_formatted', hint: 'بحسب سعر البيع', href: route('reports.index', { type: 'stock' }) },
+    { label: 'حركات اليوم', key: 'movements_today', hint: 'إدخال وإخراج', href: route('movements.index') },
 ];
+
+const currentPeriodLabel = computed(
+    () => props.periods.find((item) => item.value === props.period)?.label ?? 'آخر 7 أيام',
+);
+
+function changePeriod(period) {
+    if (period === props.period) {
+        return;
+    }
+
+    router.get(route('dashboard'), { period }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        only: ['chart', 'period'],
+    });
+}
 </script>
 
 <template>
@@ -51,7 +71,6 @@ const cards = [
                     :label="card.label"
                     :value="stats[card.key]"
                     :hint="card.hint"
-                    :tone="card.tone"
                     :href="card.href"
                 />
             </div>
@@ -61,11 +80,28 @@ const cards = [
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <h2 class="font-display text-base font-extrabold text-stone-900 dark:text-white">حركة المخزون</h2>
-                            <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">آخر 7 أيام</p>
+                            <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">{{ currentPeriodLabel }}</p>
                         </div>
-                        <div class="flex items-center gap-4 text-[11px] font-semibold text-stone-500 dark:text-stone-400">
-                            <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-brand-400"></span> إدخال</span>
-                            <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-maroon-500"></span> إخراج</span>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="flex flex-wrap gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1 dark:border-night-800 dark:bg-night-950">
+                                <button
+                                    v-for="item in periods"
+                                    :key="item.value"
+                                    type="button"
+                                    class="rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition sm:text-[11px]"
+                                    :class="period === item.value
+                                        ? 'bg-brand-400 text-night-950 shadow-sm'
+                                        : 'text-stone-500 hover:bg-white hover:text-stone-900 dark:text-stone-400 dark:hover:bg-night-800 dark:hover:text-white'"
+                                    :aria-pressed="period === item.value"
+                                    @click="changePeriod(item.value)"
+                                >
+                                    {{ item.label }}
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-4 text-[11px] font-semibold text-stone-500 dark:text-stone-400">
+                                <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-brand-400"></span> إدخال</span>
+                                <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-maroon-500"></span> إخراج</span>
+                            </div>
                         </div>
                     </div>
                     <div class="mt-5">

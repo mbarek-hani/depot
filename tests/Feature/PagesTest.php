@@ -51,7 +51,9 @@ class PagesTest extends TestCase
 
         $this->get(route('dashboard'))
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Dashboard'));
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Dashboard')
+                ->where('app.logo', asset('images/logo.jpeg')));
 
         $this->get(route('products.index'))
             ->assertOk()
@@ -101,6 +103,38 @@ class PagesTest extends TestCase
         }
     }
 
+    public function test_dashboard_chart_supports_period_filters(): void
+    {
+        $this->actingAs($this->user);
+
+        $this->get(route('dashboard', ['period' => '7d']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('period', '7d')
+                ->has('chart.labels', 7)
+                ->has('periods', 4));
+
+        $this->get(route('dashboard', ['period' => '30d']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('period', '30d')
+                ->has('chart.labels', 30));
+
+        $this->get(route('dashboard', ['period' => 'week']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('period', 'week'));
+
+        $this->get(route('dashboard', ['period' => 'month']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('period', 'month'));
+
+        $this->get(route('dashboard', ['period' => 'invalid']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('period', '7d')
+                ->has('chart.labels', 7));
+    }
+
     public function test_every_authenticated_user_can_manage_inventory(): void
     {
         $this->actingAs($this->user);
@@ -117,6 +151,10 @@ class PagesTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString(
+            'attachment; filename="stock-report-',
+            (string) $response->headers->get('Content-Disposition'),
+        );
         $this->assertStringStartsWith('%PDF', $response->getContent());
     }
 }

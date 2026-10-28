@@ -9,15 +9,33 @@ use App\Models\StockMovement;
 use App\Support\Format;
 use App\Support\Present;
 use App\Support\Settings;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(): Response
+    private const PERIODS = [
+        '7d' => 'آخر 7 أيام',
+        '30d' => 'آخر 30 يومًا',
+        'week' => 'هذا الأسبوع',
+        'month' => 'هذا الشهر',
+    ];
+
+    public function __invoke(Request $request): Response
     {
         $defaultThreshold = Settings::lowStockThreshold();
         $warningDays = Settings::expiryWarningDays();
+
+        $period = (string) $request->query('period', '7d');
+        $period = array_key_exists($period, self::PERIODS) ? $period : '7d';
+        $end = today();
+        $start = match ($period) {
+            '30d' => $end->copy()->subDays(29),
+            'week' => $end->copy()->startOfWeek(),
+            'month' => $end->copy()->startOfMonth(),
+            default => $end->copy()->subDays(6),
+        };
 
         $productQuery = Product::query();
 
@@ -45,15 +63,19 @@ class DashboardController extends Controller
             'movements_today' => StockMovement::query()->whereDate('occurred_at', today())->count(),
         ];
 
-        $start = today()->subDays(6);
-
         $movementTotals = StockMovement::query()
             ->selectRaw('DATE(occurred_at) as day, type, SUM(quantity) as total')
-            ->where('occurred_at', '>=', $start->copy()->startOfDay())
+            ->whereDate('occurred_at', '>=', $start->toDateString())
+            ->whereDate('occurred_at', '<=', $end->toDateString())
             ->groupBy('day', 'type')
             ->get();
 
-        $days = collect(range(0, 6))->map(fn (int $offset) => $start->copy()->addDays($offset));
+        $days = collect();
+
+        for ($day = $start->copy(); $day->lte($end); $day->addDay()) {
+            $days->push($day->copy());
+        }
+
         $chart = [
             'labels' => $days->map(fn ($day) => $day->translatedFormat('D j/n'))->all(),
             'datasets' => [
@@ -122,6 +144,11 @@ class DashboardController extends Controller
                 'out_today_formatted' => Format::quantity($stats['out_today']),
             ],
             'chart' => $chart,
+            'period' => $period,
+            'periods' => collect(self::PERIODS)->map(fn (string $label, string $value) => [
+                'value' => $value,
+                'label' => $label,
+            ])->values()->all(),
             'categoryChart' => $categoryChart,
             'recentMovements' => $recentMovements->map(fn ($movement) => Present::movement($movement))->all(),
             'lowStockProducts' => $lowStockProducts->map(fn ($product) => Present::product($product))->all(),
