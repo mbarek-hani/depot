@@ -2,6 +2,8 @@
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import Icon from '../../Components/Icon.vue';
+import Logo from '../../Components/Logo.vue';
+import ThemeToggle from '../../Components/ThemeToggle.vue';
 import UiButton from '../../Components/UiButton.vue';
 
 const page = usePage();
@@ -26,11 +28,13 @@ const inputClass = 'h-11 w-full rounded-xl border border-stone-300 bg-white px-3
     <Head title="تسجيل الدخول" />
 
     <div class="flex min-h-screen items-center justify-center bg-cream-100 px-4 py-10 dark:bg-night-950">
+        <div class="fixed left-4 top-4 z-20">
+            <ThemeToggle />
+        </div>
+
         <div class="w-full max-w-md">
             <div class="mb-6 flex flex-col items-center text-center">
-                <span class="flex size-14 items-center justify-center rounded-3xl bg-brand-400 text-night-950 shadow-card">
-                    <Icon name="archive" :size="30" />
-                </span>
+                <Logo size="lg" />
                 <h1 class="mt-4 font-display text-2xl font-extrabold text-stone-900 dark:text-white">{{ app.name }}</h1>
                 <p class="mt-1 text-xs font-semibold text-stone-400">نظام إدارة المخزون</p>
             </div>

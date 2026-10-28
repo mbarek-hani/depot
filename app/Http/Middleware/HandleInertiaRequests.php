@@ -33,6 +33,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'app' => [
                 'name' => Settings::associationName(),
+                'logo' => Settings::logoUrl(),
                 'currency' => Settings::currency(),
                 'today' => now()->translatedFormat('l، j F Y'),
             ],

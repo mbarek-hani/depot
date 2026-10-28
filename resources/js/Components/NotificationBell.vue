@@ -6,6 +6,7 @@ import Icon from './Icon.vue';
 
 const page = usePage();
 const open = ref(false);
+const bellMenu = ref(null);
 const unread = ref(Number(page.props.notifications?.unread ?? 0));
 const latest = ref([...(page.props.notifications?.latest ?? [])]);
 let timer = null;
@@ -41,6 +42,12 @@ function onKey(event) {
     }
 }
 
+function onPointerDown(event) {
+    if (open.value && bellMenu.value && !bellMenu.value.contains(event.target)) {
+        open.value = false;
+    }
+}
+
 watch(
     () => page.props.notifications,
     (value) => {
@@ -69,6 +76,7 @@ onMounted(() => {
     }
 
     window.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPointerDown);
 });
 
 onBeforeUnmount(() => {
@@ -79,15 +87,17 @@ onBeforeUnmount(() => {
     }
 
     window.removeEventListener('keydown', onKey);
+    document.removeEventListener('pointerdown', onPointerDown);
 });
 </script>
 
 <template>
-    <div class="relative">
+    <div ref="bellMenu" class="relative">
         <button
             type="button"
             class="relative inline-flex size-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 transition hover:border-stone-300 hover:text-stone-900 dark:border-night-800 dark:bg-night-900 dark:text-stone-300 dark:hover:border-stone-700 dark:hover:text-white"
             aria-label="الإشعارات"
+            :aria-expanded="open"
             @click="open = !open"
         >
             <Icon name="bell" :size="20" />
@@ -98,8 +108,6 @@ onBeforeUnmount(() => {
                 {{ badge }}
             </span>
         </button>
-
-        <div v-if="open" class="fixed inset-0 z-40" @click="open = false"></div>
 
         <div
             v-if="open"

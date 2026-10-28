@@ -1,10 +1,12 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import Icon from './Icon.vue';
+import Logo from './Logo.vue';
 import ThemeToggle from './ThemeToggle.vue';
 import NotificationBell from './NotificationBell.vue';
+import ToastStack from './ToastStack.vue';
 
 defineProps({
     title: String,
@@ -13,11 +15,10 @@ defineProps({
 const page = usePage();
 const sidebarOpen = ref(false);
 const userOpen = ref(false);
+const userMenu = ref(null);
 const search = ref('');
 const user = computed(() => page.props.auth?.user);
-const flash = computed(() => page.props.flash ?? {});
 const app = computed(() => page.props.app ?? {});
-const errors = computed(() => page.props.errors ?? {});
 
 const nav = [
     { route: 'dashboard', active: 'dashboard', label: 'الرئيسية', icon: 'home' },
@@ -47,6 +48,29 @@ function submitSearch() {
 function logout() {
     router.post(route('logout'));
 }
+
+function handlePointerDown(event) {
+    if (userOpen.value && userMenu.value && !userMenu.value.contains(event.target)) {
+        userOpen.value = false;
+    }
+}
+
+function handleEscape(event) {
+    if (event.key === 'Escape') {
+        userOpen.value = false;
+        sidebarOpen.value = false;
+    }
+}
+
+onMounted(() => {
+    document.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('keydown', handleEscape);
+});
+
+onBeforeUnmount(() => {
+    document.removeEventListener('pointerdown', handlePointerDown);
+    window.removeEventListener('keydown', handleEscape);
+});
 </script>
 
 <template>
@@ -58,9 +82,7 @@ function logout() {
 
     <aside class="fixed inset-y-0 start-0 z-40 hidden w-72 flex-col border-e border-stone-200 bg-white lg:flex dark:border-white/5 dark:bg-night-900">
         <div class="flex items-center gap-3 px-5 py-5">
-            <span class="flex size-10 items-center justify-center rounded-2xl bg-brand-400 text-night-950 shadow-sm">
-                <Icon name="archive" :size="22" />
-            </span>
+            <Logo />
             <div class="min-w-0">
                 <p class="truncate font-display text-sm font-extrabold text-stone-900 dark:text-white">{{ app.name }}</p>
                 <p class="text-[10px] font-semibold text-stone-400">إدارة المخزون</p>
@@ -85,23 +107,24 @@ function logout() {
         </nav>
 
         <div class="border-t border-stone-100 p-3 dark:border-night-800">
-            <Link :href="route('settings.index', { tab: 'account' })" class="flex items-center gap-3 rounded-xl p-2 transition hover:bg-stone-50 dark:hover:bg-night-800">
+            <div class="flex items-center gap-3 rounded-xl p-2">
                 <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-extrabold text-brand-800 dark:bg-brand-400/15 dark:text-brand-300">
                     {{ user?.name?.slice(0, 1) }}
                 </span>
-                <span class="min-w-0">
+                <span class="min-w-0 flex-1">
                     <span class="block truncate text-xs font-bold text-stone-800 dark:text-stone-100">{{ user?.name }}</span>
                     <span class="block text-[10px] text-stone-400">حساب محلي</span>
                 </span>
-            </Link>
-            <button
-                type="button"
-                class="mt-0.5 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[11px] font-bold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
-                @click="logout"
-            >
-                <Icon name="logout" :size="16" />
-                تسجيل الخروج
-            </button>
+                <button
+                    type="button"
+                    class="flex size-9 shrink-0 items-center justify-center rounded-xl text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                    aria-label="تسجيل الخروج"
+                    title="تسجيل الخروج"
+                    @click="logout"
+                >
+                    <Icon name="logout" :size="17" />
+                </button>
+            </div>
         </div>
     </aside>
 
@@ -111,9 +134,7 @@ function logout() {
         <aside class="absolute inset-y-0 start-0 flex w-[18rem] max-w-[85vw] flex-col border-e border-stone-200 bg-white shadow-pop dark:border-white/5 dark:bg-night-900">
             <div class="flex items-center justify-between px-5 py-5">
                 <div class="flex items-center gap-3">
-                    <span class="flex size-9 items-center justify-center rounded-2xl bg-brand-400 text-night-950">
-                        <Icon name="archive" :size="20" />
-                    </span>
+                    <Logo size="sm" />
                     <p class="font-display text-sm font-extrabold text-stone-900 dark:text-white">{{ app.name }}</p>
                 </div>
                 <button type="button" class="rounded-lg p-1.5 text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-white/10" aria-label="إغلاق القائمة" @click="sidebarOpen = false">
@@ -140,10 +161,24 @@ function logout() {
             </nav>
 
             <div class="border-t border-stone-100 p-3 dark:border-night-800">
-                <button type="button" class="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10" @click="logout">
-                    <Icon name="logout" :size="16" />
-                    تسجيل الخروج
-                </button>
+                <div class="flex items-center gap-3 rounded-xl p-2">
+                    <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-extrabold text-brand-800 dark:bg-brand-400/15 dark:text-brand-300">
+                        {{ user?.name?.slice(0, 1) }}
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block truncate text-xs font-bold text-stone-800 dark:text-stone-100">{{ user?.name }}</span>
+                        <span class="block text-[10px] text-stone-400">حساب محلي</span>
+                    </span>
+                    <button
+                        type="button"
+                        class="flex size-9 shrink-0 items-center justify-center rounded-xl text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                        aria-label="تسجيل الخروج"
+                        title="تسجيل الخروج"
+                        @click="logout"
+                    >
+                        <Icon name="logout" :size="17" />
+                    </button>
+                </div>
             </div>
         </aside>
     </div>
@@ -179,11 +214,12 @@ function logout() {
                     <ThemeToggle />
                     <NotificationBell />
 
-                    <div class="relative">
+                    <div ref="userMenu" class="relative">
                         <button
                             type="button"
                             class="flex items-center gap-2 rounded-xl border border-stone-200 bg-white p-1 ps-2 transition hover:border-stone-300 dark:border-night-800 dark:bg-night-900 dark:hover:border-stone-700"
                             aria-label="قائمة المستخدم"
+                            :aria-expanded="userOpen"
                             @click="userOpen = !userOpen"
                         >
                             <span class="hidden max-w-28 truncate text-xs font-bold text-stone-700 sm:block dark:text-stone-200">{{ user?.name }}</span>
@@ -192,8 +228,6 @@ function logout() {
                             </span>
                             <Icon name="chevron-down" :size="14" class="me-1 text-stone-400" />
                         </button>
-
-                        <div v-if="userOpen" class="fixed inset-0 z-40" @click="userOpen = false"></div>
 
                         <div v-if="userOpen" class="absolute end-0 z-50 mt-2 w-60 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-pop dark:border-night-800 dark:bg-night-900">
                             <div class="border-b border-stone-100 px-4 py-3 dark:border-night-800">
@@ -222,24 +256,11 @@ function logout() {
         </header>
 
         <main id="main-content" class="mx-auto w-full max-w-7xl px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 lg:px-8 lg:pb-12 lg:pt-8">
-            <div v-if="flash.status || flash.error" class="mb-5 space-y-2">
-                <div v-if="flash.status" class="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
-                    <Icon name="check" :size="16" class="mt-0.5 shrink-0" />
-                    <span>{{ flash.status }}</span>
-                </div>
-                <div v-if="flash.error" class="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
-                    <Icon name="warning" :size="16" class="mt-0.5 shrink-0" />
-                    <span>{{ flash.error }}</span>
-                </div>
-            </div>
-
-            <div v-if="Object.keys(errors).length && !$slots.errors" class="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
-                {{ Object.values(errors)[0] }}
-            </div>
-
             <slot />
         </main>
     </div>
+
+    <ToastStack />
 
     <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg lg:hidden dark:border-night-800 dark:bg-night-900/95" aria-label="التنقل السريع">
         <div class="grid grid-cols-5">

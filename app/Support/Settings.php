@@ -71,6 +71,18 @@ class Settings
         return (string) self::get('association_name');
     }
 
+    public static function logoUrl(): ?string
+    {
+        $path = collect([
+            'images/logo.png',
+            'images/logo.jpg',
+            'images/logo.jpeg',
+            'images/logo.svg',
+        ])->first(fn (string $path) => is_file(public_path($path)));
+
+        return $path ? asset($path) : null;
+    }
+
     public static function currency(): string
     {
         return (string) self::get('currency');
