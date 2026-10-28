@@ -71,7 +71,7 @@ function clear() {
     <AppLayout title="التقارير">
         <PageHeader title="التقارير" description="تقارير المخزون والحركات والصلاحية جاهزة للعرض والتنزيل بصيغة PDF." eyebrow="التحليلات">
             <template #actions>
-                <UiButton :href="downloadUrl" icon="download">تنزيل PDF</UiButton>
+                <UiButton :href="downloadUrl" icon="download" download>تنزيل PDF</UiButton>
             </template>
         </PageHeader>
 
@@ -89,7 +89,7 @@ function clear() {
             </div>
 
             <div class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-                <StatCard v-for="item in report.summary" :key="item.label" :label="item.label" :value="item.value" :tone="item.tone" />
+                <StatCard v-for="item in report.summary" :key="item.label" :label="item.label" :value="item.value" />
             </div>
 
             <div class="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-card dark:border-night-800 dark:bg-night-900">

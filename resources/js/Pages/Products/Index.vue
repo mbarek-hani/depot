@@ -68,13 +68,13 @@ function destroy() {
                     <p class="text-[10px] font-semibold text-stone-500 dark:text-stone-400">إجمالي المنتجات</p>
                     <p class="mt-1 text-lg font-extrabold text-stone-900 tabular dark:text-white">{{ summary.total }}</p>
                 </div>
-                <div class="rounded-xl border border-amber-200/70 bg-amber-50 p-3.5 dark:border-amber-500/20 dark:bg-amber-500/10">
-                    <p class="text-[10px] font-semibold text-amber-700 dark:text-amber-300">مخزون منخفض</p>
-                    <p class="mt-1 text-lg font-extrabold text-amber-800 tabular dark:text-amber-200">{{ summary.low }}</p>
+                <div class="rounded-xl border border-stone-200/80 bg-white p-3.5 shadow-card dark:border-night-800 dark:bg-night-900">
+                    <p class="text-[10px] font-semibold text-stone-500 dark:text-stone-400">مخزون منخفض</p>
+                    <p class="mt-1 text-lg font-extrabold text-stone-900 tabular dark:text-white">{{ summary.low }}</p>
                 </div>
-                <div class="rounded-xl border border-rose-200/70 bg-rose-50 p-3.5 dark:border-rose-500/20 dark:bg-rose-500/10">
-                    <p class="text-[10px] font-semibold text-rose-700 dark:text-rose-300">نفد المخزون</p>
-                    <p class="mt-1 text-lg font-extrabold text-rose-800 tabular dark:text-rose-200">{{ summary.out }}</p>
+                <div class="rounded-xl border border-stone-200/80 bg-white p-3.5 shadow-card dark:border-night-800 dark:bg-night-900">
+                    <p class="text-[10px] font-semibold text-stone-500 dark:text-stone-400">نفد المخزون</p>
+                    <p class="mt-1 text-lg font-extrabold text-stone-900 tabular dark:text-white">{{ summary.out }}</p>
                 </div>
                 <div class="rounded-xl border border-stone-200/80 bg-white p-3.5 shadow-card dark:border-night-800 dark:bg-night-900">
                     <p class="text-[10px] font-semibold text-stone-500 dark:text-stone-400">قريب الانتهاء</p>

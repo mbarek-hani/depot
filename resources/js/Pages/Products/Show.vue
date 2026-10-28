@@ -46,10 +46,10 @@ function destroy() {
 
         <div class="mt-6 space-y-4">
             <div class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-                <StatCard label="الكمية الحالية" :value="`${product.quantity_formatted} ${product.unit}`" tone="brand" hint="الكمية المتوفرة بالمخزون" />
-                <StatCard label="حالة المخزون" :value="product.stock_label" :tone="product.stock_tone" :hint="`حد التنبيه: ${product.threshold_formatted}`" />
-                <StatCard label="قيمة المخزون" :value="product.stock_cost_formatted" tone="success" hint="بحسب سعر التكلفة" />
-                <StatCard label="الصلاحية" :value="product.expiry_date_formatted ?? 'غير محددة'" :tone="product.expiry_tone" :hint="product.expiry_label" />
+                <StatCard label="الكمية الحالية" :value="`${product.quantity_formatted} ${product.unit}`" hint="الكمية المتوفرة بالمخزون" />
+                <StatCard label="حالة المخزون" :value="product.stock_label" :hint="`حد التنبيه: ${product.threshold_formatted}`" />
+                <StatCard label="قيمة المخزون" :value="product.stock_cost_formatted" hint="بحسب سعر التكلفة" />
+                <StatCard label="الصلاحية" :value="product.expiry_date_formatted ?? 'غير محددة'" :hint="product.expiry_label" />
             </div>
 
             <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">

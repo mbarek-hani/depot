@@ -9,6 +9,7 @@ const props = defineProps({
     variant: { type: String, default: 'brand' },
     size: { type: String, default: 'md' },
     icon: String,
+    download: { type: [Boolean, String], default: false },
 });
 
 const variants = {
@@ -34,11 +35,32 @@ const classes = computed(() => [
     sizes[props.size] ?? sizes.md,
 ]);
 
-const component = computed(() => (props.href ? Link : 'button'));
+const component = computed(() => {
+    if (!props.href) {
+        return 'button';
+    }
+
+    return props.download ? 'a' : Link;
+});
+
+const bindings = computed(() => {
+    if (!props.href) {
+        return { type: props.type };
+    }
+
+    if (props.download) {
+        return {
+            href: props.href,
+            download: props.download === true ? '' : props.download,
+        };
+    }
+
+    return { href: props.href };
+});
 </script>
 
 <template>
-    <component :is="component" :href="href" :type="href ? undefined : type" :class="classes">
+    <component :is="component" v-bind="bindings" :class="classes">
         <Icon v-if="icon" :name="icon" :size="16" />
         <slot />
     </component>

@@ -51,10 +51,10 @@ function clear() {
 
         <div class="mt-6 space-y-4">
             <div class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-                <StatCard label="عدد الحركات" :value="totals.count" tone="brand" />
-                <StatCard label="إجمالي الإدخال" :value="totals.in_formatted" tone="success" />
-                <StatCard label="إجمالي الإخراج" :value="totals.out_formatted" tone="danger" />
-                <StatCard label="صافي الحركة" :value="totals.net_formatted" tone="info" />
+                <StatCard label="عدد الحركات" :value="totals.count" />
+                <StatCard label="إجمالي الإدخال" :value="totals.in_formatted" />
+                <StatCard label="إجمالي الإخراج" :value="totals.out_formatted" />
+                <StatCard label="صافي الحركة" :value="totals.net_formatted" />
             </div>
 
             <div class="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-card dark:border-night-800 dark:bg-night-900">

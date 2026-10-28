@@ -61,8 +61,7 @@ const toneClass = {
                         v-for="notification in notifications.data"
                         :key="notification.id"
                         :href="notification.url"
-                        class="block rounded-2xl border bg-white p-4 shadow-card transition hover:border-brand-300 dark:bg-night-900"
-                        :class="notification.read ? 'border-stone-200/80 dark:border-night-800' : 'border-brand-200/80 dark:border-brand-400/20'"
+                        class="block rounded-2xl border border-stone-200/80 bg-white p-4 shadow-card transition hover:border-stone-300 dark:border-night-800 dark:bg-night-900 dark:hover:border-stone-700"
                     >
                         <div class="flex items-start gap-3">
                             <span class="flex size-10 shrink-0 items-center justify-center rounded-xl" :class="toneClass[notification.tone] ?? toneClass.info">
