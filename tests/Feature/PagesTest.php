@@ -10,13 +10,14 @@ use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\ReportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class PagesTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected User $admin;
+    protected User $user;
 
     protected Product $product;
 
@@ -24,7 +25,7 @@ class PagesTest extends TestCase
     {
         parent::setUp();
 
-        $this->admin = User::factory()->admin()->create();
+        $this->user = User::factory()->create();
 
         $category = Category::factory()->create(['name' => 'معلبات']);
         $this->product = Product::factory()->create([
@@ -35,77 +36,83 @@ class PagesTest extends TestCase
 
         StockMovement::factory()->create([
             'product_id' => $this->product->id,
-            'user_id' => $this->admin->id,
+            'user_id' => $this->user->id,
             'type' => StockMovementType::In,
-            'reason' => MovementReason::Opening,
+            'reason' => MovementReason::Company,
             'quantity' => 20,
             'quantity_before' => 0,
             'quantity_after' => 20,
         ]);
     }
 
-    public function test_admin_pages_are_rendered(): void
+    public function test_app_pages_are_rendered(): void
     {
-        $this->actingAs($this->admin);
+        $this->actingAs($this->user);
 
-        $this->get(route('dashboard'))->assertOk();
-        $this->get(route('products.index'))->assertOk();
-        $this->get(route('products.create'))->assertOk();
-        $this->get(route('products.show', $this->product))->assertOk();
-        $this->get(route('products.edit', $this->product))->assertOk();
-        $this->get(route('movements.index'))->assertOk();
-        $this->get(route('reports.index'))->assertOk();
-        $this->get(route('notifications.index'))->assertOk();
-        $this->get(route('users.index'))->assertOk();
-        $this->get(route('users.create'))->assertOk();
-        $this->get(route('users.edit', $this->admin))->assertOk();
-        $this->get(route('categories.index'))->assertOk();
-        $this->get(route('settings.index'))->assertOk();
-        $this->get(route('settings.index', ['tab' => 'appearance']))->assertOk();
-        $this->get(route('settings.index', ['tab' => 'account']))->assertOk();
+        $this->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Dashboard'));
+
+        $this->get(route('products.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Products/Index'));
+
+        $this->get(route('products.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Products/Create'));
+
+        $this->get(route('products.show', $this->product))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Products/Show'));
+
+        $this->get(route('products.edit', $this->product))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Products/Edit'));
+
+        $this->get(route('movements.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Movements/Index'));
+
+        $this->get(route('reports.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Reports/Index'));
+
+        $this->get(route('notifications.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Notifications/Index'));
+
+        $this->get(route('categories.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Categories/Index'));
+
+        $this->get(route('settings.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Settings/Index'));
     }
 
     public function test_all_report_types_render(): void
     {
-        $this->actingAs($this->admin);
+        $this->actingAs($this->user);
 
         foreach (array_keys(ReportService::types()) as $type) {
-            $this->get(route('reports.index', ['type' => $type]))->assertOk();
+            $this->get(route('reports.index', ['type' => $type]))
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page->component('Reports/Index'));
         }
     }
 
-    public function test_regular_user_can_view_read_only_pages(): void
+    public function test_every_authenticated_user_can_manage_inventory(): void
     {
-        $user = User::factory()->create();
+        $this->actingAs($this->user);
 
-        $this->actingAs($user);
-
-        $this->get(route('dashboard'))->assertOk();
-        $this->get(route('products.index'))->assertOk();
-        $this->get(route('products.show', $this->product))->assertOk();
-        $this->get(route('movements.index'))->assertOk();
-        $this->get(route('reports.index'))->assertOk();
-        $this->get(route('notifications.index'))->assertOk();
-        $this->get(route('settings.index'))->assertOk();
-    }
-
-    public function test_regular_user_cannot_access_admin_pages_or_actions(): void
-    {
-        $user = User::factory()->create();
-
-        $this->actingAs($user);
-
-        $this->get(route('users.index'))->assertForbidden();
-        $this->get(route('categories.index'))->assertForbidden();
-        $this->get(route('products.create'))->assertForbidden();
-        $this->get(route('products.edit', $this->product))->assertForbidden();
-        $this->get(route('settings.index', ['tab' => 'general']))->assertForbidden();
-        $this->post(route('movements.store'), [])->assertForbidden();
+        $this->get(route('categories.index'))->assertOk();
+        $this->get(route('products.create'))->assertOk();
+        $this->get(route('products.edit', $this->product))->assertOk();
     }
 
     public function test_pdf_report_is_downloaded(): void
     {
-        $response = $this->actingAs($this->admin)
+        $response = $this->actingAs($this->user)
             ->get(route('reports.download', ['type' => 'stock']));
 
         $response->assertOk();

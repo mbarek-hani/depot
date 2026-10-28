@@ -26,7 +26,7 @@ class StockMovementFactory extends Factory
             'product_id' => Product::factory(),
             'user_id' => User::factory(),
             'type' => $type,
-            'reason' => fake()->randomElement(MovementReason::forType($type)),
+            'reason' => fake()->randomElement(MovementReason::cases()),
             'quantity' => $quantity,
             'quantity_before' => $before,
             'quantity_after' => $type === StockMovementType::In ? $before + $quantity : max(0, $before - $quantity),

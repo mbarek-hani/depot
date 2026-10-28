@@ -3,15 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Support\Present;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class NotificationController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $filter = $request->string('filter')->toString();
 
@@ -24,7 +26,11 @@ class NotificationController extends Controller
 
         $unread = $request->user()->unreadNotifications()->count();
 
-        return view('notifications.index', compact('notifications', 'filter', 'unread'));
+        return Inertia::render('Notifications/Index', [
+            'notifications' => $notifications->through(fn (DatabaseNotification $notification) => Present::notification($notification)),
+            'filter' => $filter,
+            'unread' => $unread,
+        ]);
     }
 
     public function open(Request $request, DatabaseNotification $notification): RedirectResponse

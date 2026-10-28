@@ -14,14 +14,14 @@ class NotificationTest extends TestCase
 
     public function test_user_can_open_their_own_notification(): void
     {
-        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
         $product = Product::factory()->outOfStock()->create(['expiry_date' => null]);
 
         app(AlertService::class)->evaluateProduct($product);
 
-        $notification = $admin->notifications()->firstOrFail();
+        $notification = $user->notifications()->firstOrFail();
 
-        $this->actingAs($admin)
+        $this->actingAs($user)
             ->get(route('notifications.open', $notification))
             ->assertRedirect(route('products.show', $product));
 
@@ -30,13 +30,13 @@ class NotificationTest extends TestCase
 
     public function test_user_cannot_open_another_users_notification(): void
     {
-        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
         $other = User::factory()->create();
         $product = Product::factory()->outOfStock()->create(['expiry_date' => null]);
 
         app(AlertService::class)->evaluateProduct($product);
 
-        $notification = $admin->notifications()->firstOrFail();
+        $notification = $user->notifications()->firstOrFail();
 
         $this->actingAs($other)
             ->get(route('notifications.open', $notification))
@@ -47,30 +47,30 @@ class NotificationTest extends TestCase
 
     public function test_user_can_mark_all_notifications_as_read(): void
     {
-        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
         $product = Product::factory()->outOfStock()->create(['expiry_date' => null]);
 
         app(AlertService::class)->evaluateProduct($product);
 
-        $this->assertSame(1, $admin->unreadNotifications()->count());
+        $this->assertSame(1, $user->unreadNotifications()->count());
 
-        $this->actingAs($admin)
+        $this->actingAs($user)
             ->patch(route('notifications.read-all'))
             ->assertRedirect();
 
-        $this->assertSame(0, $admin->unreadNotifications()->count());
+        $this->assertSame(0, $user->unreadNotifications()->count());
     }
 
     public function test_opening_notification_for_archived_product_redirects_safely(): void
     {
-        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
         $product = Product::factory()->outOfStock()->create(['expiry_date' => null]);
 
         app(AlertService::class)->evaluateProduct($product);
-        $notification = $admin->notifications()->firstOrFail();
+        $notification = $user->notifications()->firstOrFail();
         $product->delete();
 
-        $this->actingAs($admin)
+        $this->actingAs($user)
             ->get(route('notifications.open', $notification))
             ->assertRedirect(route('notifications.index'))
             ->assertSessionHas('status');

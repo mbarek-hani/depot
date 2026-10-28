@@ -14,23 +14,23 @@ class CategoryManagementTest extends TestCase
 
     public function test_category_with_archived_products_cannot_be_deleted(): void
     {
-        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
         $category = Category::factory()->create();
         Product::factory()->for($category)->create()->delete();
 
-        $this->actingAs($admin)
+        $this->actingAs($user)
             ->delete(route('categories.destroy', $category))
             ->assertSessionHasErrors('category');
 
         $this->assertDatabaseHas('categories', ['id' => $category->id]);
     }
 
-    public function test_empty_category_can_be_deleted_by_admin(): void
+    public function test_empty_category_can_be_deleted(): void
     {
-        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
         $category = Category::factory()->create();
 
-        $this->actingAs($admin)
+        $this->actingAs($user)
             ->delete(route('categories.destroy', $category))
             ->assertSessionHasNoErrors()
             ->assertRedirect();

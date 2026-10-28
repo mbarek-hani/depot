@@ -9,19 +9,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class SettingsController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $tab = in_array($request->query('tab'), ['general', 'appearance', 'account'], true)
             ? $request->query('tab')
-            : ($request->user()->isAdmin() ? 'general' : 'appearance');
+            : 'general';
 
-        abort_if($tab === 'general' && ! $request->user()->isAdmin(), 403);
-
-        return view('settings.index', [
+        return Inertia::render('Settings/Index', [
             'tab' => $tab,
             'settings' => Settings::all(),
         ]);
@@ -29,8 +28,6 @@ class SettingsController extends Controller
 
     public function updateGeneral(Request $request): RedirectResponse
     {
-        abort_unless($request->user()->isAdmin(), 403);
-
         $data = $request->validate([
             'association_name' => ['required', 'string', 'max:120'],
             'association_phone' => ['nullable', 'string', 'max:30'],
@@ -53,31 +50,14 @@ class SettingsController extends Controller
         $user = $request->user();
 
         $request->merge([
-            'email' => strtolower(trim((string) $request->input('email'))),
+            'name' => trim((string) $request->input('name')),
         ]);
 
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:190', Rule::unique('users', 'email')->ignore($user)],
+            'name' => ['required', 'string', 'max:120', Rule::unique('users', 'name')->ignore($user)],
         ]);
 
-        $emailChanged = $user->email !== $data['email'];
-
-        $attributes = ['name' => $data['name'], 'email' => $data['email']];
-
-        if ($emailChanged && $user->isAdmin()) {
-            $attributes['email_verified_at'] = null;
-        }
-
-        $user->update($attributes);
-
-        if ($emailChanged && $user->isAdmin()) {
-            $user->sendEmailVerificationNotification();
-
-            return redirect()
-                ->route('verification.notice')
-                ->with('status', 'تم تحديث البريد الإلكتروني. يرجى تأكيد البريد الجديد.');
-        }
+        $user->update(['name' => $data['name']]);
 
         return redirect()
             ->route('settings.index', ['tab' => 'account'])

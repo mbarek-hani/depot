@@ -14,12 +14,4 @@ enum AlertType: string
             self::Expiry => 'تنبيه صلاحية',
         };
     }
-
-    public function preferenceColumn(): string
-    {
-        return match ($this) {
-            self::LowStock => 'receive_low_stock_alerts',
-            self::Expiry => 'receive_expiry_alerts',
-        };
-    }
 }

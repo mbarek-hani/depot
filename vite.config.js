@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
 import tailwindcss from '@tailwindcss/vite';
+import vue from '@vitejs/plugin-vue';
+import inertia from '@inertiajs/vite';
 
 export default defineConfig({
     plugins: [
@@ -19,6 +21,8 @@ export default defineConfig({
                 }),
             ],
         }),
+        inertia({ ssr: false }),
+        vue(),
         tailwindcss(),
     ],
     server: {

@@ -4,22 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Enums\MovementReason;
 use App\Enums\StockMovementType;
-use App\Http\Requests\Admin\StoreMovementRequest;
+use App\Http\Requests\StoreMovementRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\StockMovement;
 use App\Services\StockService;
+use App\Support\Format;
+use App\Support\Present;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class StockMovementController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $request->validate([
             'search' => ['nullable', 'string', 'max:120'],
@@ -56,13 +58,30 @@ class StockMovementController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('movements.index', [
-            'movements' => $movements,
-            'categories' => Category::query()->orderBy('name')->get(),
-            'filters' => $filters,
-            'totals' => $totals,
-            'products' => Product::query()->orderBy('name')->get(['id', 'name', 'sku', 'quantity', 'unit']),
-            'reasons' => MovementReason::cases(),
+        return Inertia::render('Movements/Index', [
+            'movements' => $movements->through(fn (StockMovement $movement) => Present::movement($movement)),
+            'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
+            'filters' => [
+                'search' => $filters['search'],
+                'type' => $filters['type'],
+                'category_id' => $filters['category_id'],
+                'from' => $filters['from']?->format('Y-m-d'),
+                'to' => $filters['to']?->format('Y-m-d'),
+            ],
+            'totals' => [
+                'in' => $totals['in'],
+                'out' => $totals['out'],
+                'count' => $totals['count'],
+                'in_formatted' => Format::quantity($totals['in']),
+                'out_formatted' => Format::quantity($totals['out']),
+                'net_formatted' => Format::quantity($totals['in'] - $totals['out']),
+            ],
+            'products' => Product::query()->orderBy('name')->get(['id', 'name', 'sku', 'quantity', 'unit'])
+                ->map(fn (Product $product) => Present::productOption($product))->all(),
+            'reasons' => collect(MovementReason::cases())->map(fn (MovementReason $reason) => [
+                'value' => $reason->value,
+                'label' => $reason->label(),
+            ])->all(),
         ]);
     }
 
@@ -71,12 +90,6 @@ class StockMovementController extends Controller
         $data = $request->validated();
         $type = StockMovementType::from($data['type']);
         $reason = MovementReason::from($data['reason']);
-
-        if (! in_array($reason, MovementReason::forType($type), true)) {
-            throw ValidationException::withMessages([
-                'reason' => 'سبب الحركة المحدد لا يتوافق مع نوع الحركة.',
-            ]);
-        }
 
         $product = Product::query()->findOrFail($data['product_id']);
         $occurredAt = filled($data['occurred_at'] ?? null) ? Carbon::parse($data['occurred_at']) : now();

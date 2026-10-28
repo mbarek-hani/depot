@@ -5,10 +5,10 @@ namespace App\Services;
 use App\Enums\AlertType;
 use App\Enums\ExpiryStatus;
 use App\Enums\StockStatus;
+use App\Events\StockAlertCreated;
 use App\Models\Product;
 use App\Models\User;
 use App\Notifications\StockAlertNotification;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -84,13 +84,23 @@ class AlertService
     {
         $sent = 0;
 
-        foreach ($this->recipients($type) as $user) {
+        foreach ($this->recipients() as $user) {
             if ($this->alreadyUnread($user, $product, $type)) {
                 continue;
             }
 
             $user->notify(new StockAlertNotification($product, $type, $title, $message, $tone));
             $sent++;
+
+            $notification = $user->notifications()->latest()->first();
+
+            if ($notification) {
+                try {
+                    StockAlertCreated::dispatch($user, $notification);
+                } catch (\Throwable $exception) {
+                    report($exception);
+                }
+            }
         }
 
         return $sent;
@@ -112,15 +122,9 @@ class AlertService
             ->update(['read_at' => now()]);
     }
 
-    protected function recipients(AlertType $type): Collection
+    protected function recipients(): Collection
     {
-        return User::query()
-            ->active()
-            ->where(function (Builder $query) use ($type) {
-                $query->where('role', 'admin')
-                    ->orWhere($type->preferenceColumn(), true);
-            })
-            ->get();
+        return User::query()->get();
     }
 
     protected function alreadyUnread(User $user, Product $product, AlertType $type): bool

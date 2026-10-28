@@ -19,7 +19,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'name' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -27,7 +27,7 @@ class LoginRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'email' => strtolower(trim((string) $this->input('email'))),
+            'name' => trim((string) $this->input('name')),
         ]);
     }
 
@@ -35,19 +35,11 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        if (! Auth::attempt($this->only('name', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => 'بيانات الدخول غير صحيحة. تأكد من البريد الإلكتروني وكلمة المرور.',
-            ]);
-        }
-
-        if (! Auth::user()->isActive()) {
-            Auth::logout();
-
-            throw ValidationException::withMessages([
-                'email' => 'هذا الحساب غير نشط. يرجى التواصل مع مدير النظام.',
+                'name' => 'بيانات الدخول غير صحيحة. تأكد من الاسم وكلمة المرور.',
             ]);
         }
 
@@ -65,12 +57,12 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'email' => "محاولات دخول كثيرة. يرجى المحاولة بعد {$seconds} ثانية.",
+            'name' => "محاولات دخول كثيرة. يرجى المحاولة بعد {$seconds} ثانية.",
         ]);
     }
 
     protected function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('name')).'|'.$this->ip());
     }
 }

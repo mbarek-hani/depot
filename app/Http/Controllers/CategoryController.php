@@ -3,15 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Support\Present;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class CategoryController extends Controller
 {
-    public function index(): View
+    public function index(): Response
     {
         $categories = Category::query()
             ->withCount('products')
@@ -20,7 +22,13 @@ class CategoryController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('categories.index', compact('categories'));
+        return Inertia::render('Categories/Index', [
+            'categories' => $categories->map(fn (Category $category) => Present::category($category))->all(),
+            'colors' => collect(Category::COLORS)->map(fn (string $label, string $value) => [
+                'value' => $value,
+                'label' => $label,
+            ])->values()->all(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse

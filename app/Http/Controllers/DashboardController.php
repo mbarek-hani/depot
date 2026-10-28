@@ -6,12 +6,15 @@ use App\Enums\StockMovementType;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Support\Format;
+use App\Support\Present;
 use App\Support\Settings;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(): Response
     {
         $defaultThreshold = Settings::lowStockThreshold();
         $warningDays = Settings::expiryWarningDays();
@@ -103,15 +106,28 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('dashboard.index', compact(
-            'stats',
-            'chart',
-            'categoryChart',
-            'recentMovements',
-            'lowStockProducts',
-            'expiringProducts',
-            'defaultThreshold',
-            'warningDays',
-        ));
+        return Inertia::render('Dashboard', [
+            'stats' => [
+                'products' => $stats['products'],
+                'quantity' => $stats['quantity'],
+                'quantity_formatted' => Format::quantity($stats['quantity']),
+                'low_stock' => $stats['low_stock'],
+                'out_of_stock' => $stats['out_of_stock'],
+                'expiring' => $stats['expiring'],
+                'expired' => $stats['expired'],
+                'stock_cost_formatted' => Format::money($stats['stock_cost']),
+                'stock_sale_formatted' => Format::money($stats['stock_sale']),
+                'movements_today' => $stats['movements_today'],
+                'in_today_formatted' => Format::quantity($stats['in_today']),
+                'out_today_formatted' => Format::quantity($stats['out_today']),
+            ],
+            'chart' => $chart,
+            'categoryChart' => $categoryChart,
+            'recentMovements' => $recentMovements->map(fn ($movement) => Present::movement($movement))->all(),
+            'lowStockProducts' => $lowStockProducts->map(fn ($product) => Present::product($product))->all(),
+            'expiringProducts' => $expiringProducts->map(fn ($product) => Present::product($product))->all(),
+            'defaultThreshold' => $defaultThreshold,
+            'warningDays' => $warningDays,
+        ]);
     }
 }

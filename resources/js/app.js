@@ -1,10 +1,27 @@
-import Alpine from 'alpinejs';
+import '../css/app.css';
+import { createApp, h } from 'vue';
+import { createInertiaApp } from '@inertiajs/vue3';
+import { ZiggyVue } from 'ziggy-js';
 import { initTheme } from './theme';
-import { initCharts } from './charts';
-import './notifications';
-
-window.Alpine = Alpine;
-Alpine.start();
+import { initEcho } from './echo';
 
 initTheme();
-initCharts();
+initEcho();
+
+createInertiaApp({
+    title: (title) => (title ? `${title} · إدارة المخزون` : 'إدارة المخزون'),
+    resolve: (name) => {
+        const pages = import.meta.glob('./Pages/**/*.vue', { eager: true });
+
+        return pages[`./Pages/${name}.vue`];
+    },
+    setup({ el, App, props, plugin }) {
+        createApp({ render: () => h(App, props) })
+            .use(plugin)
+            .use(ZiggyVue)
+            .mount(el);
+    },
+    progress: {
+        color: '#facc15',
+    },
+});

@@ -13,7 +13,7 @@ class Settings
         'association_email' => '',
         'low_stock_threshold' => '10',
         'expiry_warning_days' => '30',
-        'currency' => 'ر.س',
+        'currency' => 'MAD',
         'report_footer' => 'مستودع جمعية تحدي الإعاقة — تقرير داخلي',
     ];
 

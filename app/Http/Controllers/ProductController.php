@@ -4,22 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Enums\MovementReason;
 use App\Enums\StockMovementType;
-use App\Http\Requests\Admin\StoreProductRequest;
-use App\Http\Requests\Admin\UpdateProductRequest;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\StockMovement;
 use App\Services\AlertService;
 use App\Services\StockService;
+use App\Support\Format;
+use App\Support\Present;
 use App\Support\Settings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ProductController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $sort = $request->string('sort')->toString() ?: 'created_at|desc';
         [$sortColumn, $sortDirection] = array_pad(explode('|', $sort, 2), 2, 'asc');
@@ -57,14 +61,23 @@ class ProductController extends Controller
             'expiring' => Product::expiringSoon()->count(),
         ];
 
-        return view('products.index', compact('products', 'categories', 'filters', 'summary'));
+        return Inertia::render('Products/Index', [
+            'products' => $products->through(fn (Product $product) => Present::product($product)),
+            'categories' => $categories->map(fn (Category $category) => [
+                'id' => $category->id,
+                'name' => $category->name,
+            ])->all(),
+            'filters' => $filters,
+            'summary' => $summary,
+        ]);
     }
 
-    public function create(): View
+    public function create(): Response
     {
-        return view('products.create', [
-            'categories' => Category::query()->orderBy('name')->get(),
+        return Inertia::render('Products/Create', [
+            'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
             'defaultThreshold' => Settings::lowStockThreshold(),
+            'currency' => Settings::currency(),
         ]);
     }
 
@@ -82,7 +95,7 @@ class ProductController extends Controller
                     $product,
                     StockMovementType::In,
                     $initialQuantity,
-                    MovementReason::Opening,
+                    MovementReason::Other,
                     $request->user(),
                     'الرصيد الافتتاحي عند إنشاء المنتج',
                 );
@@ -98,7 +111,7 @@ class ProductController extends Controller
             ->with('status', 'تم إضافة المنتج «'.$product->name.'» إلى المخزون بنجاح.');
     }
 
-    public function show(Product $product): View
+    public function show(Product $product): Response
     {
         $product->load('category');
 
@@ -112,15 +125,27 @@ class ProductController extends Controller
             'out' => (float) $product->movements()->where('type', StockMovementType::Out->value)->sum('quantity'),
         ];
 
-        return view('products.show', compact('product', 'movements', 'totals'));
+        return Inertia::render('Products/Show', [
+            'product' => Present::product($product),
+            'movements' => $movements->through(fn (StockMovement $movement) => Present::movement($movement)),
+            'totals' => [
+                'in' => $totals['in'],
+                'out' => $totals['out'],
+                'in_formatted' => Format::quantity($totals['in']),
+                'out_formatted' => Format::quantity($totals['out']),
+            ],
+        ]);
     }
 
-    public function edit(Product $product): View
+    public function edit(Product $product): Response
     {
-        return view('products.edit', [
-            'product' => $product,
-            'categories' => Category::query()->orderBy('name')->get(),
+        $product->load('category');
+
+        return Inertia::render('Products/Edit', [
+            'product' => Present::product($product),
+            'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
             'defaultThreshold' => Settings::lowStockThreshold(),
+            'currency' => Settings::currency(),
         ]);
     }
 

@@ -30,8 +30,6 @@ Chart.register(
 Chart.defaults.font.family = "'Cairo', sans-serif";
 Chart.defaults.font.size = 12;
 
-const instances = new Map();
-
 function cssColor(variable, fallback) {
     const value = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
 
@@ -46,13 +44,7 @@ function palette() {
         muted: isDark ? '#a8a29e' : '#78716c',
         grid: isDark ? 'rgba(214, 211, 209, 0.08)' : 'rgba(68, 64, 60, 0.08)',
         brand: cssColor('--color-brand-400', '#facc15'),
-        brandDeep: cssColor('--color-brand-500', '#eab308'),
         maroon: cssColor('--color-maroon-500', '#a83232'),
-        teal: '#0f766e',
-        sky: '#0284c7',
-        violet: '#7c3aed',
-        orange: '#ea580c',
-        rose: '#e11d48',
         colors: [
             cssColor('--color-brand-400', '#facc15'),
             cssColor('--color-brand-600', '#ca8a04'),
@@ -119,7 +111,7 @@ function baseOptions(type) {
     };
 }
 
-function build(type, payload) {
+export function chartConfig(type, payload) {
     const colors = palette();
 
     if (type === 'doughnut') {
@@ -163,37 +155,4 @@ function build(type, payload) {
     };
 }
 
-function initialise() {
-    document.querySelectorAll('[data-chart]').forEach((element) => {
-        const type = element.dataset.chart;
-        let payload;
-
-        try {
-            payload = JSON.parse(element.dataset.chartData || '{}');
-        } catch {
-            return;
-        }
-
-        if (!payload.labels || !payload.labels.length) {
-            return;
-        }
-
-        const chart = new Chart(element, build(type, payload));
-        instances.set(element, { chart, type, payload });
-    });
-}
-
-export function initCharts() {
-    if (!document.querySelector('[data-chart]')) {
-        return;
-    }
-
-    initialise();
-
-    window.addEventListener('theme-changed', () => {
-        instances.forEach(({ chart, type, payload }, element) => {
-            chart.destroy();
-            instances.set(element, { chart: new Chart(element, build(type, payload)), type, payload });
-        });
-    });
-}
+export { Chart };

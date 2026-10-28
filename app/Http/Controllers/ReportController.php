@@ -6,7 +6,8 @@ use App\Http\Requests\ReportRequest;
 use App\Models\Category;
 use App\Services\ReportService;
 use Illuminate\Support\Carbon;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 use Mpdf\Mpdf;
@@ -15,17 +16,26 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ReportController extends Controller
 {
-    public function index(ReportRequest $request, ReportService $reports): View
+    public function index(ReportRequest $request, ReportService $reports): InertiaResponse
     {
         $type = $request->string('type')->toString() ?: 'stock';
         $filters = $this->filters($request);
         $report = $reports->build($type, $filters);
 
-        return view('reports.index', [
+        return Inertia::render('Reports/Index', [
+            'type' => $type,
             'report' => $report,
-            'types' => ReportService::types(),
-            'categories' => Category::query()->orderBy('name')->get(),
-            'filters' => $filters,
+            'types' => collect(ReportService::types())->map(fn (string $label, string $value) => [
+                'value' => $value,
+                'label' => $label,
+            ])->values()->all(),
+            'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
+            'filters' => [
+                'category_id' => $filters['category_id'],
+                'status' => $filters['status'],
+                'from' => $filters['from']->format('Y-m-d'),
+                'to' => $filters['to']->format('Y-m-d'),
+            ],
         ]);
     }
 

@@ -23,30 +23,18 @@ class DemoDataSeeder extends Seeder
         }
 
         $viewer = User::query()->firstOrCreate(
-            ['email' => 'viewer@example.com'],
+            ['name' => 'سارة العتيبي'],
             [
-                'name' => 'سارة العتيبي',
                 'password' => 'password',
-                'role' => 'user',
-                'is_active' => true,
-                'email_verified_at' => now(),
                 'theme' => 'system',
-                'receive_expiry_alerts' => true,
-                'receive_low_stock_alerts' => true,
             ],
         );
 
         User::query()->firstOrCreate(
-            ['email' => 'viewer2@example.com'],
+            ['name' => 'خالد الحربي'],
             [
-                'name' => 'خالد الحربي',
                 'password' => 'password',
-                'role' => 'user',
-                'is_active' => true,
-                'email_verified_at' => now(),
                 'theme' => 'light',
-                'receive_expiry_alerts' => true,
-                'receive_low_stock_alerts' => false,
             ],
         );
 
@@ -123,7 +111,7 @@ class DemoDataSeeder extends Seeder
                 'product_id' => $product->id,
                 'user_id' => $viewer->id,
                 'type' => StockMovementType::In,
-                'reason' => MovementReason::Opening,
+                'reason' => MovementReason::Other,
                 'quantity' => $opening,
                 'quantity_before' => 0,
                 'quantity_after' => $opening,
@@ -135,7 +123,7 @@ class DemoDataSeeder extends Seeder
                 'product_id' => $product->id,
                 'user_id' => $viewer->id,
                 'type' => StockMovementType::In,
-                'reason' => $index % 2 === 0 ? MovementReason::Donation : MovementReason::Purchase,
+                'reason' => MovementReason::Company,
                 'quantity' => $in,
                 'quantity_before' => $opening,
                 'quantity_after' => $opening + $in,
@@ -147,7 +135,7 @@ class DemoDataSeeder extends Seeder
                 'product_id' => $product->id,
                 'user_id' => $viewer->id,
                 'type' => StockMovementType::Out,
-                'reason' => $index % 3 === 0 ? MovementReason::Damage : MovementReason::Distribution,
+                'reason' => $index % 3 === 0 ? MovementReason::Other : MovementReason::Kitchen,
                 'quantity' => $out,
                 'quantity_before' => $opening + $in,
                 'quantity_after' => $quantity,

@@ -13,16 +13,16 @@ class StockMovementTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_can_record_stock_in_and_out(): void
+    public function test_user_can_record_stock_in_and_out(): void
     {
-        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
         $product = Product::factory()->create(['quantity' => 10, 'low_stock_threshold' => 2]);
 
-        $this->actingAs($admin)
+        $this->actingAs($user)
             ->post(route('movements.store'), [
                 'product_id' => $product->id,
                 'type' => 'in',
-                'reason' => 'purchase',
+                'reason' => 'company',
                 'quantity' => 5,
                 'occurred_at' => now()->format('Y-m-d H:i:s'),
             ])
@@ -31,11 +31,11 @@ class StockMovementTest extends TestCase
 
         $this->assertSame(15.0, (float) $product->fresh()->quantity);
 
-        $this->actingAs($admin)
+        $this->actingAs($user)
             ->post(route('movements.store'), [
                 'product_id' => $product->id,
                 'type' => 'out',
-                'reason' => 'distribution',
+                'reason' => 'kitchen',
                 'quantity' => 4,
             ])
             ->assertSessionHasNoErrors();
@@ -44,16 +44,62 @@ class StockMovementTest extends TestCase
         $this->assertDatabaseCount('stock_movements', 2);
     }
 
+    public function test_all_reasons_are_valid_for_both_directions(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->create(['quantity' => 50, 'low_stock_threshold' => 1]);
+
+        foreach (['company', 'kitchen', 'administration', 'club', 'other'] as $reason) {
+            $this->actingAs($user)
+                ->post(route('movements.store'), [
+                    'product_id' => $product->id,
+                    'type' => 'in',
+                    'reason' => $reason,
+                    'quantity' => 1,
+                ])
+                ->assertSessionHasNoErrors();
+
+            $this->actingAs($user)
+                ->post(route('movements.store'), [
+                    'product_id' => $product->id,
+                    'type' => 'out',
+                    'reason' => $reason,
+                    'quantity' => 1,
+                ])
+                ->assertSessionHasNoErrors();
+        }
+
+        $this->assertSame(50.0, (float) $product->fresh()->quantity);
+        $this->assertDatabaseCount('stock_movements', 10);
+    }
+
+    public function test_legacy_reason_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->create(['quantity' => 10]);
+
+        $this->actingAs($user)
+            ->post(route('movements.store'), [
+                'product_id' => $product->id,
+                'type' => 'in',
+                'reason' => 'purchase',
+                'quantity' => 2,
+            ])
+            ->assertSessionHasErrors('reason');
+
+        $this->assertSame(10.0, (float) $product->fresh()->quantity);
+    }
+
     public function test_stock_cannot_go_negative(): void
     {
-        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
         $product = Product::factory()->create(['quantity' => 3]);
 
-        $this->actingAs($admin)
+        $this->actingAs($user)
             ->post(route('movements.store'), [
                 'product_id' => $product->id,
                 'type' => 'out',
-                'reason' => 'distribution',
+                'reason' => 'kitchen',
                 'quantity' => 10,
             ])
             ->assertSessionHasErrors('quantity');
@@ -62,26 +108,9 @@ class StockMovementTest extends TestCase
         $this->assertDatabaseCount('stock_movements', 0);
     }
 
-    public function test_movement_reason_must_match_type(): void
-    {
-        $admin = User::factory()->admin()->create();
-        $product = Product::factory()->create(['quantity' => 10]);
-
-        $this->actingAs($admin)
-            ->post(route('movements.store'), [
-                'product_id' => $product->id,
-                'type' => 'in',
-                'reason' => 'distribution',
-                'quantity' => 2,
-            ])
-            ->assertSessionHasErrors('reason');
-
-        $this->assertSame(10.0, (float) $product->fresh()->quantity);
-    }
-
     public function test_alerts_are_deduplicated_and_resolved(): void
     {
-        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
         $product = Product::factory()->create([
             'quantity' => 5,
             'low_stock_threshold' => 10,
@@ -93,7 +122,7 @@ class StockMovementTest extends TestCase
         $this->assertSame(1, $alerts->evaluateProduct($product));
         $this->assertSame(0, $alerts->evaluateProduct($product));
 
-        $unread = $admin->notifications()
+        $unread = $user->notifications()
             ->where('data->alert_type', AlertType::LowStock->value)
             ->whereNull('read_at')
             ->count();
@@ -103,19 +132,19 @@ class StockMovementTest extends TestCase
         $product->update(['quantity' => 50]);
         $alerts->evaluateProduct($product);
 
-        $this->assertSame(0, $admin->unreadNotifications()
+        $this->assertSame(0, $user->unreadNotifications()
             ->where('data->alert_type', AlertType::LowStock->value)
             ->count());
     }
 
     public function test_out_of_stock_alert_is_created(): void
     {
-        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
         $product = Product::factory()->outOfStock()->create(['expiry_date' => null]);
 
         app(AlertService::class)->evaluateProduct($product);
 
-        $notification = $admin->notifications()
+        $notification = $user->notifications()
             ->where('data->alert_type', AlertType::LowStock->value)
             ->first();
 
@@ -124,11 +153,10 @@ class StockMovementTest extends TestCase
         $this->assertSame($product->id, $notification->data['product_id']);
     }
 
-    public function test_expiry_alert_is_created_only_for_opted_in_users(): void
+    public function test_expiry_alerts_are_sent_to_all_users(): void
     {
-        User::factory()->admin()->create();
-        $optedIn = User::factory()->create(['receive_expiry_alerts' => true]);
-        $optedOut = User::factory()->create(['receive_expiry_alerts' => false]);
+        $first = User::factory()->create();
+        $second = User::factory()->create();
 
         $product = Product::factory()->expiringSoon()->create([
             'quantity' => 20,
@@ -137,28 +165,26 @@ class StockMovementTest extends TestCase
 
         app(AlertService::class)->evaluateProduct($product);
 
-        $this->assertSame(1, $optedIn->notifications()
-            ->where('data->alert_type', AlertType::Expiry->value)
-            ->count());
-
-        $this->assertSame(0, $optedOut->notifications()
-            ->where('data->alert_type', AlertType::Expiry->value)
-            ->count());
+        foreach ([$first, $second] as $user) {
+            $this->assertSame(1, $user->notifications()
+                ->where('data->alert_type', AlertType::Expiry->value)
+                ->count());
+        }
     }
 
     public function test_archiving_product_resolves_open_alerts(): void
     {
-        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
         $product = Product::factory()->outOfStock()->create(['expiry_date' => null]);
 
         app(AlertService::class)->evaluateProduct($product);
 
-        $this->assertSame(1, $admin->unreadNotifications()->count());
+        $this->assertSame(1, $user->unreadNotifications()->count());
 
-        $this->actingAs($admin)
+        $this->actingAs($user)
             ->delete(route('products.destroy', $product))
             ->assertRedirect(route('products.index'));
 
-        $this->assertSame(0, $admin->unreadNotifications()->count());
+        $this->assertSame(0, $user->unreadNotifications()->count());
     }
 }
