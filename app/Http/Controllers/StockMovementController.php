@@ -76,7 +76,7 @@ class StockMovementController extends Controller
                 'out_formatted' => Format::quantity($totals['out']),
                 'net_formatted' => Format::quantity($totals['in'] - $totals['out']),
             ],
-            'products' => Product::query()->orderBy('name')->get(['id', 'name', 'sku', 'quantity', 'unit'])
+            'products' => Product::query()->with('activeBatches')->orderBy('name')->get(['id', 'name', 'sku', 'quantity', 'unit'])
                 ->map(fn (Product $product) => Present::productOption($product))->all(),
             'reasons' => collect(MovementReason::cases())->map(fn (MovementReason $reason) => [
                 'value' => $reason->value,
@@ -89,7 +89,10 @@ class StockMovementController extends Controller
     {
         $data = $request->validated();
         $type = StockMovementType::from($data['type']);
-        $reason = MovementReason::from($data['reason']);
+        $reason = $type === StockMovementType::Out ? MovementReason::from($data['reason']) : null;
+        $expiryDate = $type === StockMovementType::In && filled($data['expiry_date'] ?? null)
+            ? Carbon::parse($data['expiry_date'])
+            : null;
 
         $product = Product::query()->findOrFail($data['product_id']);
         $occurredAt = filled($data['occurred_at'] ?? null) ? Carbon::parse($data['occurred_at']) : now();
@@ -102,6 +105,7 @@ class StockMovementController extends Controller
             $request->user(),
             $data['note'] ?? null,
             $occurredAt,
+            $expiryDate,
         );
 
         return back()->with(

@@ -41,7 +41,7 @@ class ReportService
     protected function stockReport(?int $categoryId, string $status): array
     {
         $products = Product::query()
-            ->with('category')
+            ->with(['category', 'activeBatches'])
             ->when($categoryId, fn (Builder $query) => $query->where('category_id', $categoryId))
             ->filterStatus($status === 'all' ? null : $status)
             ->orderBy('name')
@@ -59,16 +59,20 @@ class ReportService
                 ['label' => 'القيمة المتوقعة للبيع', 'value' => Format::money($products->sum(fn ($product) => $product->stockSaleValue()))],
             ],
             'columns' => ['المنتج', 'الرمز', 'الصنف', 'الكمية', 'الوحدة', 'حالة المخزون', 'الصلاحية', 'قيمة التكلفة'],
-            'rows' => $products->map(fn (Product $product) => [
-                $product->name,
-                $product->sku,
-                $product->category?->name ?? '—',
-                Format::quantity($product->quantity),
-                $product->unit,
-                $product->stockStatus()->label(),
-                $product->expiry_date ? Format::date($product->expiry_date).' · '.$product->expiryStatus()->label() : 'بدون تاريخ',
-                Format::money($product->stockCostValue()),
-            ])->all(),
+            'rows' => $products->map(function (Product $product) {
+                $expiry = $product->nearestExpiryDate();
+
+                return [
+                    $product->name,
+                    $product->sku,
+                    $product->category?->name ?? '—',
+                    Format::quantity($product->quantity),
+                    $product->unit,
+                    $product->stockStatus()->label(),
+                    $expiry ? Format::date($expiry).' · '.$product->expiryStatus()->label() : 'بدون تاريخ',
+                    Format::money($product->stockCostValue()),
+                ];
+            })->all(),
             'totals' => [
                 'الكميات' => Format::quantity($products->sum(fn ($product) => (float) $product->quantity)),
                 'قيمة التكلفة' => Format::money($products->sum(fn ($product) => $product->stockCostValue())),
@@ -110,7 +114,7 @@ class ReportService
                 $movement->product?->name ?? 'منتج محذوف',
                 $movement->type->label(),
                 $movement->type->sign().Format::quantity($movement->quantity),
-                $movement->reason->label(),
+                $movement->reason?->label() ?? '—',
                 $movement->user?->name ?? '—',
                 $movement->note ?: '—',
             ])->all(),
@@ -166,44 +170,48 @@ class ReportService
     {
         $warningDays = Settings::expiryWarningDays();
 
-        $products = Product::query()
-            ->with('category')
-            ->when($categoryId, fn (Builder $query) => $query->where('category_id', $categoryId))
+        $batches = StockMovement::query()
+            ->activeBatches()
+            ->with(['product.category'])
+            ->whereHas('product', fn (Builder $query) => $query->whereNull('deleted_at'))
             ->whereNotNull('expiry_date')
-            ->when($status === 'expired', fn (Builder $query) => $query->expired())
-            ->when($status === 'expiring', fn (Builder $query) => $query->expiringSoon())
+            ->when($categoryId, fn (Builder $query) => $query->whereHas('product', fn (Builder $query) => $query->where('category_id', $categoryId)))
+            ->when($status === 'expired', fn (Builder $query) => $query->whereDate('expiry_date', '<', today()))
+            ->when($status === 'expiring', fn (Builder $query) => $query
+                ->whereDate('expiry_date', '>=', today())
+                ->whereDate('expiry_date', '<=', today()->addDays($warningDays)))
             ->when(! in_array($status, ['expired', 'expiring'], true), fn (Builder $query) => $query
                 ->whereDate('expiry_date', '<=', today()->addDays($warningDays)))
-            ->orderBy('expiry_date')
+            ->fefo()
             ->get();
 
-        $expired = $products->filter(fn (Product $product) => $product->expiryStatus()->value === 'expired');
-        $soon = $products->filter(fn (Product $product) => $product->expiryStatus()->value === 'expiring');
+        $expired = $batches->filter(fn (StockMovement $batch) => $batch->expiryStatus()->value === 'expired');
+        $soon = $batches->filter(fn (StockMovement $batch) => $batch->expiryStatus()->value === 'expiring');
 
         return [
             'type' => 'expiry',
             'title' => 'تقرير تواريخ الصلاحية',
-            'description' => "المنتجات المنتهية أو التي تنتهي صلاحيتها خلال {$warningDays} يومًا.",
+            'description' => "دفعات المخزون المنتهية أو التي تنتهي صلاحيتها خلال {$warningDays} يومًا.",
             'period' => 'حتى تاريخ '.Format::longDate(now()),
             'summary' => [
-                ['label' => 'منتجات منتهية', 'value' => number_format($expired->count())],
-                ['label' => 'قريبة الانتهاء', 'value' => number_format($soon->count())],
-                ['label' => 'الكميات المعرضة للخطر', 'value' => Format::quantity($products->sum(fn ($product) => (float) $product->quantity))],
+                ['label' => 'دفعات منتهية', 'value' => number_format($expired->count())],
+                ['label' => 'دفعات قريبة الانتهاء', 'value' => number_format($soon->count())],
+                ['label' => 'الكميات المعرضة للخطر', 'value' => Format::quantity($batches->sum(fn (StockMovement $batch) => (float) $batch->quantity_remaining))],
                 ['label' => 'مدة التنبيه', 'value' => $warningDays.' يوم'],
             ],
-            'columns' => ['المنتج', 'الرمز', 'الصنف', 'تاريخ الانتهاء', 'المتبقي', 'الكمية', 'الحالة'],
-            'rows' => $products->map(fn (Product $product) => [
-                $product->name,
-                $product->sku,
-                $product->category?->name ?? '—',
-                Format::date($product->expiry_date),
-                $this->remainingLabel($product->daysUntilExpiry()),
-                Format::quantity($product->quantity).' '.$product->unit,
-                $product->expiryStatus()->label(),
+            'columns' => ['المنتج', 'الرمز', 'الصنف', 'تاريخ الانتهاء', 'المتبقي', 'الكمية المتبقية', 'الحالة'],
+            'rows' => $batches->map(fn (StockMovement $batch) => [
+                $batch->product?->name ?? 'منتج محذوف',
+                $batch->product?->sku ?? '—',
+                $batch->product?->category?->name ?? '—',
+                Format::date($batch->expiry_date),
+                $this->remainingLabel($batch->daysUntilExpiry()),
+                Format::quantity($batch->quantity_remaining).' '.($batch->product?->unit ?? ''),
+                $batch->expiryStatus()->label(),
             ])->all(),
             'totals' => [
-                'عدد المنتجات' => number_format($products->count()),
-                'إجمالي الكميات' => Format::quantity($products->sum(fn ($product) => (float) $product->quantity)),
+                'عدد الدفعات' => number_format($batches->count()),
+                'إجمالي الكميات' => Format::quantity($batches->sum(fn (StockMovement $batch) => (float) $batch->quantity_remaining)),
             ],
         ];
     }

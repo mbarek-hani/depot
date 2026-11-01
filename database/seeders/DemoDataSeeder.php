@@ -90,7 +90,6 @@ class DemoDataSeeder extends Seeder
                     'unit' => $unit,
                     'quantity' => 0,
                     'low_stock_threshold' => $threshold,
-                    'expiry_date' => $expiryInDays === null ? null : today()->addDays($expiryInDays),
                     'cost_price' => $cost,
                     'sale_price' => $sale,
                     'notes' => null,
@@ -106,13 +105,18 @@ class DemoDataSeeder extends Seeder
             $opening = $quantity + 20 + (($index % 4) * 5);
             $in = 10 + (($index % 5) * 3);
             $out = $opening + $in - $quantity;
+            $expiry = $expiryInDays === null ? null : today()->addDays($expiryInDays);
+            $openingRemaining = max(0, $opening - $out);
+            $inRemaining = $out > $opening ? max(0, $in - ($out - $opening)) : $in;
 
             StockMovement::query()->create([
                 'product_id' => $product->id,
                 'user_id' => $viewer->id,
                 'type' => StockMovementType::In,
-                'reason' => MovementReason::Other,
+                'reason' => null,
+                'expiry_date' => $expiry,
                 'quantity' => $opening,
+                'quantity_remaining' => $openingRemaining,
                 'quantity_before' => 0,
                 'quantity_after' => $opening,
                 'note' => 'الرصيد الافتتاحي عند إعداد النظام',
@@ -123,8 +127,10 @@ class DemoDataSeeder extends Seeder
                 'product_id' => $product->id,
                 'user_id' => $viewer->id,
                 'type' => StockMovementType::In,
-                'reason' => MovementReason::Company,
+                'reason' => null,
+                'expiry_date' => $expiry,
                 'quantity' => $in,
+                'quantity_remaining' => $inRemaining,
                 'quantity_before' => $opening,
                 'quantity_after' => $opening + $in,
                 'note' => 'توريد دفعة جديدة للمستودع',

@@ -2,8 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Enums\StockMovementType;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\StockMovement;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -24,11 +26,33 @@ class ProductFactory extends Factory
             'unit' => fake()->randomElement(['قطعة', 'علبة', 'كيس', 'كرتون', 'كيلو', 'لتر']),
             'quantity' => fake()->numberBetween(0, 220),
             'low_stock_threshold' => fake()->optional(0.6)->numberBetween(5, 30),
-            'expiry_date' => fake()->optional(0.75)->dateTimeBetween('-20 days', '+300 days'),
             'cost_price' => $cost,
             'sale_price' => round($cost * fake()->randomFloat(2, 1.1, 1.7), 2),
             'notes' => fake()->optional(0.3)->sentence(),
         ];
+    }
+
+    public function withBatch(?float $quantity = null, mixed $expiryDate = null): static
+    {
+        return $this->afterCreating(function (Product $product) use ($quantity, $expiryDate) {
+            $batchQuantity = $quantity ?? (float) $product->quantity;
+
+            if ($batchQuantity <= 0) {
+                return;
+            }
+
+            StockMovement::factory()->create([
+                'product_id' => $product->id,
+                'user_id' => null,
+                'type' => StockMovementType::In,
+                'reason' => null,
+                'expiry_date' => $expiryDate,
+                'quantity' => $batchQuantity,
+                'quantity_remaining' => $batchQuantity,
+                'quantity_before' => 0,
+                'quantity_after' => $batchQuantity,
+            ]);
+        });
     }
 
     public function outOfStock(): static
@@ -46,15 +70,11 @@ class ProductFactory extends Factory
 
     public function expiringSoon(): static
     {
-        return $this->state(fn () => [
-            'expiry_date' => now()->addDays(fake()->numberBetween(1, 25)),
-        ]);
+        return $this->withBatch(expiryDate: now()->addDays(fake()->numberBetween(1, 25)));
     }
 
     public function expired(): static
     {
-        return $this->state(fn () => [
-            'expiry_date' => now()->subDays(fake()->numberBetween(1, 30)),
-        ]);
+        return $this->withBatch(expiryDate: now()->subDays(fake()->numberBetween(1, 30)));
     }
 }

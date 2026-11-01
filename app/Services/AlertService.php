@@ -30,7 +30,7 @@ class AlertService
     public function evaluateProduct(Product $product): int
     {
         $sent = 0;
-        $product->refresh();
+        $product->refresh()->load('activeBatches');
 
         $stockStatus = $product->stockStatus();
 
@@ -55,22 +55,23 @@ class AlertService
         }
 
         $expiryStatus = $product->expiryStatus();
+        $expiryDate = $product->nearestExpiryDate();
 
-        if ($expiryStatus === ExpiryStatus::Expired) {
+        if ($expiryStatus === ExpiryStatus::Expired && $expiryDate) {
             $sent += $this->notify(
                 $product,
                 AlertType::Expiry,
-                'انتهت صلاحية منتج',
-                "انتهت صلاحية «{$product->name}» بتاريخ {$product->expiry_date->format('Y/m/d')}.",
+                'انتهت صلاحية دفعة',
+                "انتهت صلاحية أقرب دفعة من «{$product->name}» بتاريخ {$expiryDate->format('Y/m/d')}.",
                 'danger',
             );
-        } elseif ($expiryStatus === ExpiryStatus::Expiring) {
+        } elseif ($expiryStatus === ExpiryStatus::Expiring && $expiryDate) {
             $days = $product->daysUntilExpiry();
             $sent += $this->notify(
                 $product,
                 AlertType::Expiry,
-                'منتج قريب الانتهاء',
-                "ينتهي «{$product->name}» بعد {$days} يوم بتاريخ {$product->expiry_date->format('Y/m/d')}.",
+                'دفعة قريبة الانتهاء',
+                "تنتهي أقرب دفعة من «{$product->name}» بعد {$days} يوم بتاريخ {$expiryDate->format('Y/m/d')}.",
                 'warning',
             );
         } else {

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 class Product extends Model
 {
@@ -23,7 +24,6 @@ class Product extends Model
         'unit',
         'quantity',
         'low_stock_threshold',
-        'expiry_date',
         'cost_price',
         'sale_price',
         'notes',
@@ -36,7 +36,6 @@ class Product extends Model
             'low_stock_threshold' => 'decimal:2',
             'cost_price' => 'decimal:2',
             'sale_price' => 'decimal:2',
-            'expiry_date' => 'date',
         ];
     }
 
@@ -71,6 +70,25 @@ class Product extends Model
         return $this->hasMany(StockMovement::class);
     }
 
+    public function activeBatches(): HasMany
+    {
+        return $this->movements()->activeBatches()->fefo();
+    }
+
+    public function nearestExpiryDate(): ?Carbon
+    {
+        if ($this->relationLoaded('activeBatches')) {
+            return $this->activeBatches
+                ->first(fn (StockMovement $batch) => $batch->expiry_date !== null)
+                ?->expiry_date;
+        }
+
+        return $this->activeBatches()
+            ->whereNotNull('expiry_date')
+            ->first()
+            ?->expiry_date;
+    }
+
     public function lowStockThresholdValue(): float
     {
         return (float) ($this->low_stock_threshold ?? Settings::lowStockThreshold());
@@ -91,15 +109,17 @@ class Product extends Model
 
     public function expiryStatus(): ExpiryStatus
     {
-        if (! $this->expiry_date) {
+        $expiry = $this->nearestExpiryDate();
+
+        if (! $expiry) {
             return ExpiryStatus::None;
         }
 
-        if ($this->expiry_date->lt(today())) {
+        if ($expiry->lt(today())) {
             return ExpiryStatus::Expired;
         }
 
-        if ($this->expiry_date->lte(today()->addDays(Settings::expiryWarningDays()))) {
+        if ($expiry->lte(today()->addDays(Settings::expiryWarningDays()))) {
             return ExpiryStatus::Expiring;
         }
 
@@ -108,11 +128,13 @@ class Product extends Model
 
     public function daysUntilExpiry(): ?int
     {
-        if (! $this->expiry_date) {
+        $expiry = $this->nearestExpiryDate();
+
+        if (! $expiry) {
             return null;
         }
 
-        return (int) today()->diffInDays($this->expiry_date->startOfDay(), false);
+        return (int) today()->diffInDays($expiry->copy()->startOfDay(), false);
     }
 
     public function stockCostValue(): float
@@ -163,17 +185,17 @@ class Product extends Model
     {
         $days ??= Settings::expiryWarningDays();
 
-        return $query
+        return $query->whereHas('activeBatches', fn (Builder $batch) => $batch
             ->whereNotNull('expiry_date')
             ->whereDate('expiry_date', '>=', today())
-            ->whereDate('expiry_date', '<=', today()->addDays($days));
+            ->whereDate('expiry_date', '<=', today()->addDays($days)));
     }
 
     public function scopeExpired(Builder $query): Builder
     {
-        return $query
+        return $query->whereHas('activeBatches', fn (Builder $batch) => $batch
             ->whereNotNull('expiry_date')
-            ->whereDate('expiry_date', '<', today());
+            ->whereDate('expiry_date', '<', today()));
     }
 
     public function scopeFilterStatus(Builder $query, ?string $status): Builder

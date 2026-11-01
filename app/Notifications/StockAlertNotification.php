@@ -35,7 +35,7 @@ class StockAlertNotification extends Notification
             'message' => $this->message,
             'tone' => $this->tone,
             'quantity' => (float) $this->product->quantity,
-            'expiry_date' => $this->product->expiry_date?->toDateString(),
+            'expiry_date' => $this->product->nearestExpiryDate()?->toDateString(),
             'url' => route('products.show', $this->product),
             'icon' => $this->alertType === AlertType::Expiry ? 'calendar' : 'archive',
         ];
