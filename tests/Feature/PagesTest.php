@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\MovementReason;
 use App\Enums\StockMovementType;
 use App\Models\Category;
 use App\Models\Product;
@@ -28,21 +27,13 @@ class PagesTest extends TestCase
         $this->user = User::factory()->create();
 
         $category = Category::factory()->create(['name' => 'معلبات']);
-        $this->product = Product::factory()->create([
-            'category_id' => $category->id,
-            'name' => 'تونة معلبة',
-            'quantity' => 20,
-        ]);
-
-        StockMovement::factory()->create([
-            'product_id' => $this->product->id,
-            'user_id' => $this->user->id,
-            'type' => StockMovementType::In,
-            'reason' => MovementReason::Company,
-            'quantity' => 20,
-            'quantity_before' => 0,
-            'quantity_after' => 20,
-        ]);
+        $this->product = Product::factory()
+            ->withBatch(20, now()->addDays(10))
+            ->create([
+                'category_id' => $category->id,
+                'name' => 'تونة معلبة',
+                'quantity' => 20,
+            ]);
     }
 
     public function test_app_pages_are_rendered(): void
@@ -142,6 +133,96 @@ class PagesTest extends TestCase
         $this->get(route('categories.index'))->assertOk();
         $this->get(route('products.create'))->assertOk();
         $this->get(route('products.edit', $this->product))->assertOk();
+    }
+
+    public function test_products_index_and_expiry_report_use_batch_rows(): void
+    {
+        StockMovement::factory()->create([
+            'product_id' => $this->product->id,
+            'user_id' => null,
+            'type' => StockMovementType::In,
+            'reason' => null,
+            'expiry_date' => now()->addDays(4),
+            'quantity' => 3,
+            'quantity_remaining' => 3,
+            'quantity_before' => 0,
+            'quantity_after' => 3,
+        ]);
+
+        $this->product->update(['quantity' => 23]);
+
+        $this->actingAs($this->user);
+
+        $this->get(route('products.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Products/Index')
+                ->has('products.data', 2));
+
+        $this->get(route('products.show', $this->product))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Products/Show')
+                ->has('batches', 2));
+
+        $this->get(route('movements.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Movements/Index')
+                ->has('products.0.active_batches', 2));
+
+        $this->get(route('reports.index', ['type' => 'expiry']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Reports/Index')
+                ->has('report.rows', 2));
+
+        $this->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Dashboard')
+                ->has('expiringBatches', 2));
+    }
+
+    public function test_products_index_filters_and_sorts_batch_rows(): void
+    {
+        StockMovement::factory()->create([
+            'product_id' => $this->product->id,
+            'user_id' => null,
+            'type' => StockMovementType::In,
+            'reason' => null,
+            'expiry_date' => now()->addDays(4),
+            'quantity' => 3,
+            'quantity_remaining' => 3,
+            'quantity_before' => 0,
+            'quantity_after' => 3,
+        ]);
+
+        $this->product->update(['quantity' => 23]);
+        $this->actingAs($this->user);
+
+        $this->get(route('products.index', ['status' => 'expiring']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->has('products.data', 2));
+
+        $this->get(route('products.index', ['status' => 'expired']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->has('products.data', 0));
+
+        $this->get(route('products.index', ['search' => 'تونة']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->has('products.data', 2));
+
+        $this->get(route('products.index', ['sort' => 'expiry_date|asc']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('products.data.0.expiry_date', now()->addDays(4)->toDateString()));
+    }
+
+    public function test_arabic_pagination_labels_are_available(): void
+    {
+        $this->assertStringContainsString('السابق', __('pagination.previous'));
+        $this->assertStringContainsString('التالي', __('pagination.next'));
     }
 
     public function test_pdf_report_is_downloaded(): void

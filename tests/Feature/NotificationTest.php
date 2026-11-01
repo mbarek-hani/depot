@@ -15,7 +15,7 @@ class NotificationTest extends TestCase
     public function test_user_can_open_their_own_notification(): void
     {
         $user = User::factory()->create();
-        $product = Product::factory()->outOfStock()->create(['expiry_date' => null]);
+        $product = Product::factory()->outOfStock()->create();
 
         app(AlertService::class)->evaluateProduct($product);
 
@@ -32,7 +32,7 @@ class NotificationTest extends TestCase
     {
         $user = User::factory()->create();
         $other = User::factory()->create();
-        $product = Product::factory()->outOfStock()->create(['expiry_date' => null]);
+        $product = Product::factory()->outOfStock()->create();
 
         app(AlertService::class)->evaluateProduct($product);
 
@@ -48,7 +48,7 @@ class NotificationTest extends TestCase
     public function test_user_can_mark_all_notifications_as_read(): void
     {
         $user = User::factory()->create();
-        $product = Product::factory()->outOfStock()->create(['expiry_date' => null]);
+        $product = Product::factory()->outOfStock()->create();
 
         app(AlertService::class)->evaluateProduct($product);
 
@@ -64,7 +64,7 @@ class NotificationTest extends TestCase
     public function test_opening_notification_for_archived_product_redirects_safely(): void
     {
         $user = User::factory()->create();
-        $product = Product::factory()->outOfStock()->create(['expiry_date' => null]);
+        $product = Product::factory()->outOfStock()->create();
 
         app(AlertService::class)->evaluateProduct($product);
         $notification = $user->notifications()->firstOrFail();
