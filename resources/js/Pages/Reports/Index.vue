@@ -46,9 +46,9 @@ const statusOptions = computed(() => {
 
     if (props.report.type === 'expiry') {
         return [
-            { value: 'all', label: 'جميع المنتجات ضمن المدة' },
-            { value: 'expiring', label: 'قريبة الانتهاء' },
-            { value: 'expired', label: 'منتهية' },
+            { value: 'all', label: 'جميع الدفعات ضمن المدة' },
+            { value: 'expiring', label: 'دفعات قريبة الانتهاء' },
+            { value: 'expired', label: 'دفعات منتهية' },
         ];
     }
 

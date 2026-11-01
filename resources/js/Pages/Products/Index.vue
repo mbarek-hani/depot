@@ -77,7 +77,7 @@ function destroy() {
                     <p class="mt-1 text-lg font-extrabold text-stone-900 tabular dark:text-white">{{ summary.out }}</p>
                 </div>
                 <div class="rounded-xl border border-stone-200/80 bg-white p-3.5 shadow-card dark:border-night-800 dark:bg-night-900">
-                    <p class="text-[10px] font-semibold text-stone-500 dark:text-stone-400">قريب الانتهاء</p>
+                    <p class="text-[10px] font-semibold text-stone-500 dark:text-stone-400">دفعات قريبة الانتهاء</p>
                     <p class="mt-1 text-lg font-extrabold text-stone-900 tabular dark:text-white">{{ summary.expiring }}</p>
                 </div>
             </div>
@@ -131,18 +131,18 @@ function destroy() {
                                     <th class="px-4 py-3.5 text-start">الكمية</th>
                                     <th class="px-4 py-3.5 text-start">الحالة</th>
                                     <th class="px-4 py-3.5 text-start">الصلاحية</th>
-                                    <th class="px-4 py-3.5 text-start">قيمة التكلفة</th>
+                                    <th class="px-4 py-3.5 text-start">قيمة السطر</th>
                                     <th class="px-5 py-3.5 text-end">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-stone-100 dark:divide-night-800">
-                                <tr v-for="product in products.data" :key="product.id" class="transition hover:bg-stone-50/60 dark:hover:bg-night-800/30">
+                                <tr v-for="product in products.data" :key="product.key" class="transition hover:bg-stone-50/60 dark:hover:bg-night-800/30">
                                     <td class="px-5 py-3.5">
                                         <Link :href="route('products.show', product.id)" class="group flex items-center gap-3">
                                             <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-400/10 dark:text-brand-300"><Icon name="cube" :size="18" /></span>
                                             <span class="min-w-0">
                                                 <span class="block max-w-56 truncate text-xs font-bold text-stone-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">{{ product.name }}</span>
-                                                <span class="mt-0.5 block font-mono text-[10px] text-stone-400">{{ product.sku }}</span>
+                                                <span class="mt-0.5 block font-mono text-[10px] text-stone-400">{{ product.sku }}<template v-if="product.batch_id"> · دفعة #{{ product.batch_id }}</template></span>
                                             </span>
                                         </Link>
                                     </td>
@@ -154,7 +154,7 @@ function destroy() {
                                     </td>
                                     <td class="px-4 py-3.5">
                                         <p class="text-xs font-bold text-stone-900 tabular dark:text-white">{{ product.quantity_formatted }} <span class="text-[10px] font-medium text-stone-400">{{ product.unit }}</span></p>
-                                        <p class="mt-0.5 text-[10px] text-stone-400">الحد: {{ product.threshold_formatted }}</p>
+                                        <p class="mt-0.5 text-[10px] text-stone-400">إجمالي المنتج: {{ product.product_quantity_formatted }} · الحد: {{ product.threshold_formatted }}</p>
                                     </td>
                                     <td class="px-4 py-3.5">
                                         <div class="flex flex-wrap gap-1">
@@ -187,13 +187,13 @@ function destroy() {
                 </div>
 
                 <div class="space-y-3 lg:hidden">
-                    <article v-for="product in products.data" :key="product.id" class="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-card dark:border-night-800 dark:bg-night-900">
+                    <article v-for="product in products.data" :key="product.key" class="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-card dark:border-night-800 dark:bg-night-900">
                         <div class="flex items-start justify-between gap-3">
                             <Link :href="route('products.show', product.id)" class="flex min-w-0 items-center gap-3">
                                 <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-400/10 dark:text-brand-300"><Icon name="cube" :size="20" /></span>
                                 <span class="min-w-0">
                                     <span class="block truncate text-sm font-bold text-stone-900 dark:text-white">{{ product.name }}</span>
-                                    <span class="mt-0.5 block font-mono text-[10px] text-stone-400">{{ product.sku }}</span>
+                                    <span class="mt-0.5 block font-mono text-[10px] text-stone-400">{{ product.sku }}<template v-if="product.batch_id"> · دفعة #{{ product.batch_id }}</template></span>
                                 </span>
                             </Link>
                             <div class="flex flex-wrap justify-end gap-1">
@@ -204,8 +204,9 @@ function destroy() {
 
                         <div class="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-stone-50 p-3 dark:bg-night-950">
                             <div>
-                                <p class="text-[10px] font-semibold text-stone-400">الكمية</p>
+                                <p class="text-[10px] font-semibold text-stone-400">كمية الدفعة</p>
                                 <p class="mt-0.5 text-xs font-extrabold text-stone-900 tabular dark:text-white">{{ product.quantity_formatted }} {{ product.unit }}</p>
+                                <p class="mt-0.5 text-[10px] text-stone-400">الإجمالي: {{ product.product_quantity_formatted }}</p>
                             </div>
                             <div>
                                 <p class="text-[10px] font-semibold text-stone-400">الصنف</p>
@@ -216,7 +217,7 @@ function destroy() {
                                 <p class="mt-0.5 text-xs font-bold text-stone-700 dark:text-stone-200">{{ product.expiry_date_formatted ?? '—' }}</p>
                             </div>
                             <div>
-                                <p class="text-[10px] font-semibold text-stone-400">قيمة التكلفة</p>
+                                <p class="text-[10px] font-semibold text-stone-400">قيمة السطر</p>
                                 <p class="mt-0.5 text-xs font-bold text-stone-900 tabular dark:text-white">{{ product.stock_cost_formatted }}</p>
                             </div>
                         </div>

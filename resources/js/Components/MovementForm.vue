@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import Field from './Field.vue';
@@ -28,10 +28,19 @@ function localDateTime() {
     return new Date(now.getTime() - offset).toISOString().slice(0, 16);
 }
 
+function suggestedExpiry(product) {
+    return product?.active_batches?.find((batch) => batch.expiry_date)?.expiry_date ?? '';
+}
+
+function formatNumber(value) {
+    return Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+
 const form = useForm({
     product_id: props.fixedProduct?.id ?? '',
     type: 'in',
-    reason: 'company',
+    reason: '',
+    expiry_date: suggestedExpiry(props.fixedProduct),
     quantity: '',
     occurred_at: localDateTime(),
     note: '',
@@ -43,6 +52,60 @@ const currentProduct = computed(() => {
     }
 
     return props.products.find((product) => String(product.id) === String(form.product_id));
+});
+
+const isOut = computed(() => form.type === 'out');
+const activeBatches = computed(() => currentProduct.value?.active_batches ?? []);
+const trackedAvailable = computed(() => activeBatches.value.reduce((total, batch) => total + Number(batch.quantity_remaining), 0));
+
+const previewBatches = computed(() => {
+    if (!isOut.value || Number(form.quantity) <= 0) {
+        return [];
+    }
+
+    let remaining = Number(form.quantity);
+    const preview = [];
+
+    for (const batch of activeBatches.value) {
+        if (remaining <= 0) {
+            break;
+        }
+
+        const available = Number(batch.quantity_remaining);
+        const taken = Math.min(available, remaining);
+
+        if (taken <= 0) {
+            continue;
+        }
+
+        preview.push({
+            ...batch,
+            taken,
+            taken_formatted: formatNumber(taken),
+        });
+        remaining = Math.round((remaining - taken) * 100) / 100;
+    }
+
+    return preview;
+});
+
+const insufficient = computed(() => isOut.value && Number(form.quantity) > trackedAvailable.value);
+
+watch(() => form.product_id, () => {
+    if (!isOut.value) {
+        form.expiry_date = suggestedExpiry(currentProduct.value);
+    }
+});
+
+watch(() => form.type, (type) => {
+    if (type === 'out') {
+        form.expiry_date = '';
+        form.reason = form.reason || 'company';
+        return;
+    }
+
+    form.reason = '';
+    form.expiry_date = suggestedExpiry(currentProduct.value);
 });
 
 const inputClass = 'h-11 w-full rounded-xl border border-stone-300 bg-white px-3.5 text-sm text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-400/20 dark:border-night-800 dark:bg-night-950 dark:text-white';
@@ -95,10 +158,14 @@ function submit() {
                 <p v-if="form.errors.type" class="text-[11px] font-medium text-rose-600">{{ form.errors.type }}</p>
             </div>
 
-            <Field label="سبب الحركة" :error="form.errors.reason" required>
+            <Field v-if="isOut" label="سبب الحركة" :error="form.errors.reason" required>
                 <select v-model="form.reason" :class="inputClass">
                     <option v-for="reason in reasons" :key="reason.value" :value="reason.value">{{ reason.label }}</option>
                 </select>
+            </Field>
+
+            <Field v-else label="تاريخ انتهاء الدفعة" :error="form.errors.expiry_date" hint="اتركه فارغًا للدفعات التي لا تنتهي صلاحيتها.">
+                <input v-model="form.expiry_date" type="date" :class="inputClass" dir="ltr">
             </Field>
 
             <Field label="الكمية" :error="form.errors.quantity" required>
@@ -110,6 +177,25 @@ function submit() {
             </Field>
         </div>
 
+        <div v-if="isOut && currentProduct && Number(form.quantity) > 0" class="rounded-xl border border-stone-200 bg-stone-50 p-3.5 dark:border-night-800 dark:bg-night-950">
+            <div class="flex items-center justify-between gap-3">
+                <p class="text-[11px] font-bold text-stone-600 dark:text-stone-300">الدفعات التي ستُخصم حسب الأقرب انتهاءً</p>
+                <span class="text-[10px] font-semibold text-stone-400">المتاح: {{ formatNumber(trackedAvailable) }} {{ currentProduct.unit }}</span>
+            </div>
+
+            <div v-if="previewBatches.length" class="mt-2 space-y-1.5">
+                <div v-for="batch in previewBatches" :key="batch.id" class="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-[11px] dark:bg-night-900">
+                    <span class="font-bold text-stone-700 dark:text-stone-200">{{ batch.expiry_date_formatted ?? 'بدون تاريخ' }}</span>
+                    <span class="font-extrabold text-rose-600 tabular dark:text-rose-300">-{{ batch.taken_formatted }} {{ currentProduct.unit }}</span>
+                </div>
+            </div>
+
+            <p v-if="insufficient" class="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                <Icon name="warning" :size="14" />
+                الكمية أكبر من أرصدة الدفعات المتاحة.
+            </p>
+        </div>
+
         <div v-if="currentProduct" class="rounded-xl bg-stone-50 px-3.5 py-2.5 text-[11px] font-semibold text-stone-500 dark:bg-night-950 dark:text-stone-400">
             الرصيد المتوقع بعد الحركة:
             <span class="font-extrabold text-stone-800 tabular dark:text-stone-200">
@@ -119,7 +205,7 @@ function submit() {
         </div>
 
         <Field label="ملاحظات" :error="form.errors.note">
-            <textarea v-model="form.note" :class="textareaClass" rows="3" placeholder="رقم أمر التوريد أو سبب الإخراج..."></textarea>
+            <textarea v-model="form.note" :class="textareaClass" rows="3" :placeholder="isOut ? 'مرجع الصرف أو سبب الإخراج...' : 'رقم أمر التوريد أو ملاحظات الدفعة...'"></textarea>
         </Field>
 
         <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

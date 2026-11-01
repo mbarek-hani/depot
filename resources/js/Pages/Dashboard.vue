@@ -18,7 +18,7 @@ const props = defineProps({
     categoryChart: { type: Object, required: true },
     recentMovements: { type: Array, default: () => [] },
     lowStockProducts: { type: Array, default: () => [] },
-    expiringProducts: { type: Array, default: () => [] },
+    expiringBatches: { type: Array, default: () => [] },
 });
 
 const page = usePage();
@@ -29,8 +29,8 @@ const cards = [
     { label: 'إجمالي الكميات', key: 'quantity_formatted', hint: 'مجموع الكميات بالمخزون', href: route('products.index') },
     { label: 'مخزون منخفض', key: 'low_stock', hint: 'بحاجة إلى إعادة تعبئة', href: route('products.index', { status: 'low' }) },
     { label: 'نفد المخزون', key: 'out_of_stock', hint: 'منتجات غير متوفرة', href: route('products.index', { status: 'out' }) },
-    { label: 'قريب الانتهاء', key: 'expiring', hint: 'خلال فترة التنبيه', href: route('products.index', { status: 'expiring' }) },
-    { label: 'منتهي الصلاحية', key: 'expired', hint: 'يحتاج مراجعة', href: route('products.index', { status: 'expired' }) },
+    { label: 'دفعات قريبة الانتهاء', key: 'expiring', hint: 'خلال فترة التنبيه', href: route('products.index', { status: 'expiring' }) },
+    { label: 'دفعات منتهية', key: 'expired', hint: 'تحتاج مراجعة', href: route('products.index', { status: 'expired' }) },
     { label: 'قيمة المخزون', key: 'stock_cost_formatted', hint: 'بحسب سعر التكلفة', href: route('reports.index', { type: 'stock' }) },
     { label: 'قيمة البيع المتوقعة', key: 'stock_sale_formatted', hint: 'بحسب سعر البيع', href: route('reports.index', { type: 'stock' }) },
     { label: 'حركات اليوم', key: 'movements_today', hint: 'إدخال وإخراج', href: route('movements.index') },
@@ -190,26 +190,26 @@ function changePeriod(period) {
                                     <Icon name="calendar" :size="18" />
                                 </span>
                                 <div>
-                                    <h2 class="font-display text-sm font-extrabold text-stone-900 dark:text-white">قريب الانتهاء</h2>
-                                    <p class="mt-0.5 text-[11px] text-stone-500 dark:text-stone-400">راقب تواريخ الصلاحية</p>
+                                    <h2 class="font-display text-sm font-extrabold text-stone-900 dark:text-white">دفعات قريبة الانتهاء</h2>
+                                    <p class="mt-0.5 text-[11px] text-stone-500 dark:text-stone-400">ابدأ بسحب الدفعات الأقرب انتهاءً</p>
                                 </div>
                             </div>
                             <Link :href="route('products.index', { status: 'expiring' })" class="text-[11px] font-bold text-brand-700 hover:underline dark:text-brand-300">الكل</Link>
                         </div>
 
-                        <div v-if="expiringProducts.length">
-                            <Link v-for="product in expiringProducts" :key="product.id" :href="route('products.show', product.id)" class="flex items-center gap-3 border-b border-stone-50 px-5 py-3 last:border-0 hover:bg-stone-50/70 dark:border-night-800/70 dark:hover:bg-night-800/40">
+                        <div v-if="expiringBatches.length">
+                            <Link v-for="batch in expiringBatches" :key="batch.id" :href="batch.product_url" class="flex items-center gap-3 border-b border-stone-50 px-5 py-3 last:border-0 hover:bg-stone-50/70 dark:border-night-800/70 dark:hover:bg-night-800/40">
                                 <div class="min-w-0 flex-1">
-                                    <p class="truncate text-xs font-bold text-stone-900 dark:text-white">{{ product.name }}</p>
-                                    <p class="mt-0.5 truncate text-[11px] text-stone-500 dark:text-stone-400">{{ product.category_name }} · {{ product.sku }}</p>
+                                    <p class="truncate text-xs font-bold text-stone-900 dark:text-white">{{ batch.product_name }}</p>
+                                    <p class="mt-0.5 truncate text-[11px] text-stone-500 dark:text-stone-400">{{ batch.category_name }} · {{ batch.product_sku }}</p>
                                 </div>
                                 <div class="text-end">
-                                    <p class="text-xs font-extrabold text-rose-700 tabular dark:text-rose-300">{{ product.expiry_date_formatted }}</p>
-                                    <p class="mt-0.5 text-[10px] text-stone-400">{{ product.expiry_label }}</p>
+                                    <p class="text-xs font-extrabold text-rose-700 tabular dark:text-rose-300">{{ batch.expiry_date_formatted }}</p>
+                                    <p class="mt-0.5 text-[10px] text-stone-400">{{ batch.quantity_remaining_formatted }} {{ batch.product_unit }}</p>
                                 </div>
                             </Link>
                         </div>
-                        <EmptyState v-else icon="calendar" title="لا توجد منتجات قريبة الانتهاء" description="كل المنتجات ذات الصلاحية سليمة حاليًا." />
+                        <EmptyState v-else icon="calendar" title="لا توجد دفعات قريبة الانتهاء" description="كل دفعات المخزون ذات الصلاحية سليمة حاليًا." />
                     </div>
                 </div>
             </div>

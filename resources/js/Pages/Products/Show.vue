@@ -15,6 +15,7 @@ import MovementForm from '../../Components/MovementForm.vue';
 
 const props = defineProps({
     product: { type: Object, required: true },
+    batches: { type: Array, default: () => [] },
     movements: { type: Object, required: true },
     totals: { type: Object, required: true },
 });
@@ -49,7 +50,7 @@ function destroy() {
                 <StatCard label="الكمية الحالية" :value="`${product.quantity_formatted} ${product.unit}`" hint="الكمية المتوفرة بالمخزون" />
                 <StatCard label="حالة المخزون" :value="product.stock_label" :hint="`حد التنبيه: ${product.threshold_formatted}`" />
                 <StatCard label="قيمة المخزون" :value="product.stock_cost_formatted" hint="بحسب سعر التكلفة" />
-                <StatCard label="الصلاحية" :value="product.expiry_date_formatted ?? 'غير محددة'" :hint="product.expiry_label" />
+                <StatCard label="أقرب صلاحية" :value="product.expiry_date_formatted ?? 'غير محددة'" :hint="product.active_batches_count ? `${product.active_batches_count} دفعة نشطة` : 'لا توجد دفعات نشطة'" />
             </div>
 
             <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
@@ -117,12 +118,44 @@ function destroy() {
                         </div>
                     </div>
 
-                    <div v-if="product.expiry_date" class="mt-4 rounded-xl border border-stone-200 p-4 dark:border-night-800">
-                        <p class="text-[11px] font-semibold text-stone-400">تاريخ الانتهاء</p>
-                        <p class="mt-1 text-sm font-bold text-stone-900 dark:text-white">{{ product.expiry_long }}</p>
-                        <div class="mt-2"><Badge :tone="product.expiry_tone">{{ product.expiry_label }}</Badge></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-display text-lg font-extrabold text-stone-900 dark:text-white">دفعات المخزون النشطة</h2>
+                        <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">الرصيد المتبقي لكل دفعة مرتبًا حسب الأقرب انتهاءً.</p>
+                    </div>
+                    <Badge tone="neutral">{{ batches.length }} دفعة</Badge>
+                </div>
+
+                <div v-if="batches.length" class="overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-night-800 dark:bg-night-900">
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[36rem] text-start">
+                            <thead>
+                                <tr class="border-b border-stone-100 bg-stone-50/70 text-[11px] font-bold text-stone-500 dark:border-night-800 dark:bg-night-950/60 dark:text-stone-400">
+                                    <th class="px-5 py-3.5 text-start">الدفعة</th>
+                                    <th class="px-4 py-3.5 text-start">تاريخ الانتهاء</th>
+                                    <th class="px-4 py-3.5 text-start">المتبقي</th>
+                                    <th class="px-4 py-3.5 text-start">تاريخ الإدخال</th>
+                                    <th class="px-5 py-3.5 text-start">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-100 dark:divide-night-800">
+                                <tr v-for="batch in batches" :key="batch.id" class="hover:bg-stone-50/60 dark:hover:bg-night-800/30">
+                                    <td class="px-5 py-3.5 font-mono text-[11px] font-bold text-stone-500 dark:text-stone-400">#{{ batch.id }}</td>
+                                    <td class="px-4 py-3.5 text-xs font-bold text-stone-700 dark:text-stone-200">{{ batch.expiry_date_formatted }}</td>
+                                    <td class="px-4 py-3.5 text-sm font-extrabold text-stone-900 tabular dark:text-white">{{ batch.quantity_remaining_formatted }} <span class="text-[10px] font-medium text-stone-400">{{ product.unit }}</span></td>
+                                    <td class="px-4 py-3.5 text-xs text-stone-600 dark:text-stone-300">{{ batch.occurred_formatted }}</td>
+                                    <td class="px-5 py-3.5"><Badge :tone="batch.expiry_tone">{{ batch.expiry_label }}</Badge></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
+
+                <EmptyState v-else icon="calendar" title="لا توجد دفعات نشطة" description="ستظهر هنا دفعات المخزون عند تسجيل حركة إدخال بكمية." class="rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-night-800 dark:bg-night-900" />
             </div>
 
             <div>

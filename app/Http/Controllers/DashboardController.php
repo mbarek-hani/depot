@@ -44,8 +44,19 @@ class DashboardController extends Controller
             'quantity' => (float) (clone $productQuery)->sum('quantity'),
             'low_stock' => (clone $productQuery)->lowStock()->count(),
             'out_of_stock' => (clone $productQuery)->outOfStock()->count(),
-            'expiring' => (clone $productQuery)->expiringSoon()->count(),
-            'expired' => (clone $productQuery)->expired()->count(),
+            'expiring' => StockMovement::query()
+                ->activeBatches()
+                ->whereHas('product', fn ($query) => $query->whereNull('deleted_at'))
+                ->whereNotNull('expiry_date')
+                ->whereDate('expiry_date', '>=', today())
+                ->whereDate('expiry_date', '<=', today()->addDays($warningDays))
+                ->count(),
+            'expired' => StockMovement::query()
+                ->activeBatches()
+                ->whereHas('product', fn ($query) => $query->whereNull('deleted_at'))
+                ->whereNotNull('expiry_date')
+                ->whereDate('expiry_date', '<', today())
+                ->count(),
             'stock_cost' => (float) (clone $productQuery)
                 ->selectRaw('COALESCE(SUM(quantity * cost_price), 0) as total')
                 ->value('total'),
@@ -121,10 +132,14 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        $expiringProducts = Product::query()
-            ->with('category')
-            ->expiringSoon()
-            ->orderBy('expiry_date')
+        $expiringBatches = StockMovement::query()
+            ->activeBatches()
+            ->with(['product.category'])
+            ->whereHas('product', fn ($query) => $query->whereNull('deleted_at'))
+            ->whereNotNull('expiry_date')
+            ->whereDate('expiry_date', '>=', today())
+            ->whereDate('expiry_date', '<=', today()->addDays($warningDays))
+            ->fefo()
             ->take(5)
             ->get();
 
@@ -152,7 +167,19 @@ class DashboardController extends Controller
             'categoryChart' => $categoryChart,
             'recentMovements' => $recentMovements->map(fn ($movement) => Present::movement($movement))->all(),
             'lowStockProducts' => $lowStockProducts->map(fn ($product) => Present::product($product))->all(),
-            'expiringProducts' => $expiringProducts->map(fn ($product) => Present::product($product))->all(),
+            'expiringBatches' => $expiringBatches->map(fn (StockMovement $batch) => [
+                'id' => $batch->id,
+                'product_id' => $batch->product_id,
+                'product_name' => $batch->product?->name ?? 'منتج محذوف',
+                'product_sku' => $batch->product?->sku,
+                'product_unit' => $batch->product?->unit,
+                'category_name' => $batch->product?->category?->name,
+                'product_url' => $batch->product ? route('products.show', $batch->product) : null,
+                'expiry_date_formatted' => Format::date($batch->expiry_date),
+                'expiry_label' => $batch->expiryStatus()->label(),
+                'expiry_tone' => $batch->expiryStatus()->tone(),
+                'quantity_remaining_formatted' => Format::quantity($batch->quantity_remaining),
+            ])->all(),
             'defaultThreshold' => $defaultThreshold,
             'warningDays' => $warningDays,
         ]);

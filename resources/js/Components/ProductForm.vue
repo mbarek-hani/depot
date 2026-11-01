@@ -18,7 +18,7 @@ const form = useForm({
     sku: props.product?.sku ?? '',
     category_id: props.product?.category_id ?? '',
     unit: props.product?.unit ?? '',
-    expiry_date: props.product?.expiry_date ?? '',
+    expiry_date: '',
     cost_price: props.product?.cost_price ?? '0.00',
     sale_price: props.product?.sale_price ?? '0.00',
     low_stock_threshold: props.product?.low_stock_threshold ?? '',
@@ -49,7 +49,7 @@ function submit() {
                 </span>
                 <div>
                     <h2 class="font-display text-base font-extrabold text-stone-900 dark:text-white">بيانات المنتج</h2>
-                    <p class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">الاسم والتصنيف وتاريخ الصلاحية.</p>
+                    <p class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">الاسم والتصنيف ووحدة القياس.</p>
                 </div>
             </div>
 
@@ -75,9 +75,6 @@ function submit() {
                     <input v-model="form.unit" :class="inputClass" placeholder="قطعة، كرتون، كيس، كجم...">
                 </Field>
 
-                <Field label="تاريخ الانتهاء" :error="form.errors.expiry_date" hint="اتركه فارغًا للمنتجات التي لا تنتهي صلاحيتها.">
-                    <input v-model="form.expiry_date" type="date" :class="inputClass" dir="ltr">
-                </Field>
             </div>
         </div>
 
@@ -112,9 +109,14 @@ function submit() {
                         تعديل الكمية عبر حركة مخزون
                     </p>
                 </div>
-                <Field v-else label="الكمية الافتتاحية" :error="form.errors.quantity" hint="سيتم تسجيلها كحركة إدخال برصيد افتتاحي.">
-                    <input v-model="form.quantity" type="number" step="0.01" min="0" :class="inputClass">
-                </Field>
+                <template v-else>
+                    <Field label="الكمية الافتتاحية" :error="form.errors.quantity" hint="سيتم تسجيلها كحركة إدخال برصيد افتتاحي.">
+                        <input v-model="form.quantity" type="number" step="0.01" min="0" :class="inputClass">
+                    </Field>
+                    <Field label="تاريخ انتهاء الدفعة" :error="form.errors.expiry_date" hint="اتركه فارغًا للدفعات التي لا تنتهي صلاحيتها.">
+                        <input v-model="form.expiry_date" type="date" :class="inputClass" dir="ltr">
+                    </Field>
+                </template>
             </div>
         </div>
 
