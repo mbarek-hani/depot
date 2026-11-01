@@ -24,7 +24,7 @@ class CreateUserCommand extends Command
     {
         $name = trim((string) ($this->option('name') ?: text(
             label: 'Name',
-            placeholder: 'ex: سارة',
+            placeholder: 'ex: noreddine',
             required: true,
         )));
 

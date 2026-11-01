@@ -24,7 +24,7 @@ class ChangeUserPasswordCommand extends Command
     {
         $name = trim((string) ($this->argument('name') ?: text(
             label: 'Account name',
-            placeholder: 'ex: سارة',
+            placeholder: 'ex: noreddine',
             required: true,
         )));
 
