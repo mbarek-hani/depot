@@ -6,6 +6,7 @@ use App\Enums\StockMovementType;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\User;
 use Illuminate\Notifications\DatabaseNotification;
 
 class Present
@@ -211,6 +212,28 @@ class Present
             'all_products_count' => (int) ($category->all_products_count ?? 0),
             'quantity_total' => (float) ($category->quantity_total ?? 0),
             'quantity_total_formatted' => Format::quantity($category->quantity_total ?? 0),
+        ];
+    }
+
+    public static function user(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'role' => $user->role->value,
+            'role_label' => $user->role->label(),
+            'role_tone' => $user->role->tone(),
+            'is_admin' => $user->isAdmin(),
+            'is_active' => $user->isActive(),
+            'status_label' => $user->isActive() ? 'نشط' : 'موقوف',
+            'status_tone' => $user->isActive() ? 'success' : 'danger',
+            'last_login_at' => $user->last_login_at?->toISOString(),
+            'last_login_formatted' => Format::dateTime($user->last_login_at),
+            'last_login_human' => $user->last_login_at?->diffForHumans() ?? 'لم يسجل بعد',
+            'movements_count' => (int) ($user->movements_count ?? 0),
+            'created_by_name' => $user->createdBy?->name,
+            'created_at' => Format::dateTime($user->created_at),
+            'updated_human' => $user->updated_at?->diffForHumans(),
         ];
     }
 

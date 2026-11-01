@@ -26,7 +26,13 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user ? [
                     'id' => $user->id,
                     'name' => $user->name,
+                    'role' => $user->role->value,
+                    'role_label' => $user->role->label(),
+                    'is_admin' => $user->isAdmin(),
+                    'is_active' => $user->isActive(),
                     'theme' => $user->theme ?? 'system',
+                    'last_login_at' => $user->last_login_at?->toISOString(),
+                    'last_login_formatted' => $user->last_login_at?->format('Y/m/d - H:i') ?? '—',
                     'created_at' => $user->created_at?->translatedFormat('j F Y'),
                     'updated_human' => $user->updated_at?->diffForHumans(),
                 ] : null,

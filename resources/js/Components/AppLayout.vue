@@ -20,22 +20,28 @@ const search = ref('');
 const user = computed(() => page.props.auth?.user);
 const app = computed(() => page.props.app ?? {});
 
-const nav = [
-    { route: 'dashboard', active: 'dashboard', label: 'الرئيسية', icon: 'home' },
-    { route: 'products.index', active: 'products.*', label: 'المنتجات', icon: 'cube' },
-    { route: 'movements.index', active: 'movements.*', label: 'الحركات', icon: 'arrows-right-left' },
-    { route: 'categories.index', active: 'categories.*', label: 'الأصناف', icon: 'tag' },
-    { route: 'reports.index', active: 'reports.*', label: 'التقارير', icon: 'chart-bar' },
-    { route: 'notifications.index', active: 'notifications.*', label: 'الإشعارات', icon: 'bell' },
-    { route: 'settings.index', active: 'settings.*', label: 'الإعدادات', icon: 'settings' },
-];
+const nav = computed(() => {
+    const items = [
+        { route: 'dashboard', active: 'dashboard', label: 'الرئيسية', icon: 'home' },
+        { route: 'products.index', active: 'products.*', label: 'المنتجات', icon: 'cube' },
+        { route: 'movements.index', active: 'movements.*', label: 'الحركات', icon: 'arrows-right-left' },
+        { route: 'categories.index', active: 'categories.*', label: 'الأصناف', icon: 'tag' },
+        { route: 'reports.index', active: 'reports.*', label: 'التقارير', icon: 'chart-bar' },
+        { route: 'notifications.index', active: 'notifications.*', label: 'الإشعارات', icon: 'bell' },
+    ];
 
-const mobileNav = [
-    nav[0],
-    nav[1],
-    nav[2],
-    nav[5],
-];
+    if (user.value?.is_admin) {
+        items.push({ route: 'users.index', active: 'users.*', label: 'المستخدمون', icon: 'users' });
+    }
+
+    items.push({ route: 'settings.index', active: 'settings.*', label: 'الإعدادات', icon: 'settings' });
+
+    return items;
+});
+
+const mobileNav = computed(() => ['dashboard', 'products.index', 'movements.index', 'notifications.index']
+    .map((routeName) => nav.value.find((item) => item.route === routeName))
+    .filter(Boolean));
 
 function isActive(item) {
     return route().current(item.active);
@@ -113,7 +119,7 @@ onBeforeUnmount(() => {
                 </span>
                 <span class="min-w-0 flex-1">
                     <span class="block truncate text-xs font-bold text-stone-800 dark:text-stone-100">{{ user?.name }}</span>
-                    <span class="block text-[10px] text-stone-400">حساب محلي</span>
+                    <span class="block text-[10px] text-stone-400">{{ user?.role_label ?? 'حساب محلي' }}</span>
                 </span>
                 <button
                     type="button"
@@ -167,7 +173,7 @@ onBeforeUnmount(() => {
                     </span>
                     <span class="min-w-0 flex-1">
                         <span class="block truncate text-xs font-bold text-stone-800 dark:text-stone-100">{{ user?.name }}</span>
-                        <span class="block text-[10px] text-stone-400">حساب محلي</span>
+                        <span class="block text-[10px] text-stone-400">{{ user?.role_label ?? 'حساب محلي' }}</span>
                     </span>
                     <button
                         type="button"
@@ -232,6 +238,7 @@ onBeforeUnmount(() => {
                         <div v-if="userOpen" class="absolute end-0 z-50 mt-2 w-60 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-pop dark:border-night-800 dark:bg-night-900">
                             <div class="border-b border-stone-100 px-4 py-3 dark:border-night-800">
                                 <p class="truncate text-sm font-bold text-stone-900 dark:text-white">{{ user?.name }}</p>
+                                <p class="mt-0.5 text-[10px] font-semibold text-stone-400">{{ user?.role_label }}</p>
                             </div>
                             <div class="p-1.5">
                                 <Link :href="route('settings.index', { tab: 'account' })" class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-night-800" @click="userOpen = false">

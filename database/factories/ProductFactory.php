@@ -60,6 +60,26 @@ class ProductFactory extends Factory
         return $this->state(fn () => ['quantity' => 0]);
     }
 
+    public function depleted(): static
+    {
+        return $this->afterCreating(function (Product $product) {
+            StockMovement::factory()->create([
+                'product_id' => $product->id,
+                'user_id' => null,
+                'type' => StockMovementType::In,
+                'reason' => null,
+                'expiry_date' => null,
+                'quantity' => 10,
+                'quantity_remaining' => 0,
+                'quantity_before' => 0,
+                'quantity_after' => 10,
+                'occurred_at' => now()->subDay(),
+            ]);
+
+            $product->forceFill(['quantity' => 0])->save();
+        });
+    }
+
     public function lowStock(): static
     {
         return $this->state(fn () => [

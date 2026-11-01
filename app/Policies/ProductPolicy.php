@@ -19,21 +19,21 @@ class ProductPolicy
 
     public function create(User $user): bool
     {
-        return true;
+        return $user->isAdmin() && $user->isActive();
     }
 
     public function update(User $user, Product $product): bool
     {
-        return true;
+        return $user->isAdmin() && $user->isActive();
     }
 
     public function delete(User $user, Product $product): bool
     {
-        return true;
+        return $user->isAdmin() && $user->isActive();
     }
 
     public function restore(User $user, Product $product): bool
     {
-        return true;
+        return $user->isAdmin() && $user->isActive();
     }
 }

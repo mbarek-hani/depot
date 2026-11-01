@@ -14,16 +14,16 @@ class CategoryPolicy
 
     public function create(User $user): bool
     {
-        return true;
+        return $user->isAdmin() && $user->isActive();
     }
 
     public function update(User $user, Category $category): bool
     {
-        return true;
+        return $user->isAdmin() && $user->isActive();
     }
 
     public function delete(User $user, Category $category): bool
     {
-        return true;
+        return $user->isAdmin() && $user->isActive();
     }
 }

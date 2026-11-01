@@ -1,6 +1,6 @@
 <script setup>
-import { reactive, ref } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { computed, reactive, ref } from 'vue';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import AppLayout from '../../Components/AppLayout.vue';
 import PageHeader from '../../Components/PageHeader.vue';
@@ -29,6 +29,9 @@ const filters = reactive({
     to: props.filters.to ?? '',
 });
 
+const page = usePage();
+const isAdmin = computed(() => page.props.auth?.user?.is_admin === true);
+
 const movementOpen = ref(false);
 const inputClass = 'h-10 w-full rounded-xl border border-stone-300 bg-white px-3.5 text-xs text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-400/20 dark:border-night-800 dark:bg-night-950 dark:text-white';
 
@@ -45,7 +48,7 @@ function clear() {
     <AppLayout title="حركات المخزون">
         <PageHeader title="حركات المخزون" description="سجل كامل لعمليات الإدخال والإخراج مع المستخدم والسبب." eyebrow="المخزون">
             <template #actions>
-                <UiButton v-if="products.length" icon="plus" @click="movementOpen = true">تسجيل حركة</UiButton>
+                <UiButton v-if="isAdmin && products.length" icon="plus" @click="movementOpen = true">تسجيل حركة</UiButton>
             </template>
         </PageHeader>
 
@@ -84,7 +87,7 @@ function clear() {
 
             <EmptyState v-if="!movements.data.length" icon="arrows-right-left" title="لا توجد حركات مطابقة" description="جرّب تعديل الفلاتر أو سجّل حركة مخزون جديدة." class="rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-night-800 dark:bg-night-900">
                 <template #actions>
-                    <UiButton v-if="products.length" icon="plus" @click="movementOpen = true">تسجيل حركة</UiButton>
+                    <UiButton v-if="isAdmin && products.length" icon="plus" @click="movementOpen = true">تسجيل حركة</UiButton>
                 </template>
             </EmptyState>
 

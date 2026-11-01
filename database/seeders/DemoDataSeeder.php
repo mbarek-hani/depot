@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\MovementReason;
 use App\Enums\StockMovementType;
+use App\Enums\UserRole;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\StockMovement;
@@ -26,6 +27,8 @@ class DemoDataSeeder extends Seeder
             ['name' => 'سارة العتيبي'],
             [
                 'password' => 'password',
+                'role' => UserRole::User,
+                'is_active' => true,
                 'theme' => 'system',
             ],
         );
@@ -34,6 +37,8 @@ class DemoDataSeeder extends Seeder
             ['name' => 'خالد الحربي'],
             [
                 'password' => 'password',
+                'role' => UserRole::User,
+                'is_active' => true,
                 'theme' => 'light',
             ],
         );

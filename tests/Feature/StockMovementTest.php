@@ -18,7 +18,7 @@ class StockMovementTest extends TestCase
 
     public function test_user_can_record_stock_in_and_out(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
         $product = Product::factory()->withBatch(10)->create(['quantity' => 10, 'low_stock_threshold' => 2]);
 
         $this->actingAs($user)
@@ -55,7 +55,7 @@ class StockMovementTest extends TestCase
 
     public function test_outgoing_movements_require_a_reason(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
         $product = Product::factory()->withBatch(10)->create(['quantity' => 10]);
 
         $this->actingAs($user)
@@ -71,7 +71,7 @@ class StockMovementTest extends TestCase
 
     public function test_incoming_movements_ignore_reason_and_outgoing_movements_reject_expiry(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
         $product = Product::factory()->withBatch(10)->create(['quantity' => 10]);
 
         $this->actingAs($user)
@@ -98,7 +98,7 @@ class StockMovementTest extends TestCase
 
     public function test_all_reasons_are_valid_for_outgoing_movements(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
         $product = Product::factory()->withBatch(50)->create(['quantity' => 50, 'low_stock_threshold' => 1]);
 
         foreach (['company', 'kitchen', 'administration', 'club', 'other'] as $reason) {
@@ -118,7 +118,7 @@ class StockMovementTest extends TestCase
 
     public function test_outgoing_stock_consumes_batches_by_earliest_expiry(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
         $product = Product::factory()->create(['quantity' => 13, 'low_stock_threshold' => 1]);
 
         $later = $this->batch($product, 6, now()->addDays(20), now()->subDays(2));
@@ -142,7 +142,7 @@ class StockMovementTest extends TestCase
 
     public function test_outgoing_stock_rejects_untracked_batch_balance(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
         $product = Product::factory()->create(['quantity' => 10]);
 
         $this->actingAs($user)
@@ -159,7 +159,7 @@ class StockMovementTest extends TestCase
 
     public function test_legacy_reason_is_rejected(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
         $product = Product::factory()->withBatch(10)->create(['quantity' => 10]);
 
         $this->actingAs($user)
@@ -176,7 +176,7 @@ class StockMovementTest extends TestCase
 
     public function test_product_creation_records_the_opening_batch_expiry(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
         $category = Category::factory()->create();
 
         $this->actingAs($user)
@@ -202,7 +202,7 @@ class StockMovementTest extends TestCase
 
     public function test_stock_cannot_go_negative(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
         $product = Product::factory()->withBatch(3)->create(['quantity' => 3]);
 
         $this->actingAs($user)
@@ -249,7 +249,7 @@ class StockMovementTest extends TestCase
     public function test_out_of_stock_alert_is_created(): void
     {
         $user = User::factory()->create();
-        $product = Product::factory()->outOfStock()->create();
+        $product = Product::factory()->depleted()->create();
 
         app(AlertService::class)->evaluateProduct($product);
 
@@ -283,8 +283,8 @@ class StockMovementTest extends TestCase
 
     public function test_archiving_product_resolves_open_alerts(): void
     {
-        $user = User::factory()->create();
-        $product = Product::factory()->outOfStock()->create();
+        $user = User::factory()->admin()->create();
+        $product = Product::factory()->depleted()->create();
 
         app(AlertService::class)->evaluateProduct($product);
 

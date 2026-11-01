@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue';
-import { router, useForm } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import AppLayout from '../../Components/AppLayout.vue';
 import PageHeader from '../../Components/PageHeader.vue';
@@ -14,6 +14,9 @@ const props = defineProps({
     categories: { type: Array, default: () => [] },
     colors: { type: Array, default: () => [] },
 });
+
+const page = usePage();
+const isAdmin = computed(() => page.props.auth?.user?.is_admin === true);
 
 const inputClass = 'h-11 w-full rounded-xl border border-stone-300 bg-white px-3.5 text-sm text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-400/20 dark:border-night-800 dark:bg-night-950 dark:text-white';
 const textareaClass = 'min-h-20 w-full rounded-xl border border-stone-300 bg-white px-3.5 py-3 text-sm text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-400/20 dark:border-night-800 dark:bg-night-950 dark:text-white';
@@ -83,7 +86,7 @@ function destroy() {
         <PageHeader title="الأصناف" description="نظّم المنتجات ضمن أصناف واضحة لتسهيل البحث والتقارير." eyebrow="الإدارة" />
 
         <div class="mt-6 grid gap-4 xl:grid-cols-3">
-            <div class="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-card xl:col-span-1 dark:border-night-800 dark:bg-night-900">
+            <div v-if="isAdmin" class="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-card xl:col-span-1 dark:border-night-800 dark:bg-night-900">
                 <div class="mb-5 flex items-center gap-3">
                     <span class="flex size-10 items-center justify-center rounded-xl bg-brand-100 text-brand-800 dark:bg-brand-400/15 dark:text-brand-300"><Icon name="tag" :size="20" /></span>
                     <div>
@@ -111,7 +114,7 @@ function destroy() {
                 </form>
             </div>
 
-            <div class="space-y-3 xl:col-span-2">
+            <div class="space-y-3" :class="isAdmin ? 'xl:col-span-2' : 'xl:col-span-3'">
                 <p class="text-xs font-semibold text-stone-500 dark:text-stone-400">{{ categories.length }} صنف</p>
 
                 <EmptyState v-if="!categories.length" icon="tag" title="لا توجد أصناف" description="أضف أول صنف من النموذج المجاور." class="rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-night-800 dark:bg-night-900" />
@@ -126,7 +129,7 @@ function destroy() {
                                     <p class="mt-0.5 line-clamp-2 text-[11px] leading-5 text-stone-500 dark:text-stone-400">{{ category.description || 'بدون وصف' }}</p>
                                 </div>
                             </div>
-                            <div class="flex shrink-0 items-center gap-1">
+                            <div v-if="isAdmin" class="flex shrink-0 items-center gap-1">
                                 <UiButton variant="ghost" size="icon" icon="pencil" aria-label="تعديل الصنف" @click="openEdit(category)" />
                                 <button v-if="category.all_products_count === 0" type="button" class="inline-flex size-10 items-center justify-center rounded-xl text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10" aria-label="حذف الصنف" @click="deleting = category">
                                     <Icon name="trash" :size="18" />

@@ -20,6 +20,10 @@ class SettingsController extends Controller
             ? $request->query('tab')
             : 'general';
 
+        if ($tab === 'general' && ! $request->user()->isAdmin()) {
+            $tab = 'account';
+        }
+
         return Inertia::render('Settings/Index', [
             'tab' => $tab,
             'settings' => Settings::all(),
@@ -28,6 +32,8 @@ class SettingsController extends Controller
 
     public function updateGeneral(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->isAdmin(), 403);
+
         $data = $request->validate([
             'association_name' => ['required', 'string', 'max:120'],
             'association_phone' => ['nullable', 'string', 'max:30'],

@@ -197,6 +197,8 @@ class ProductController extends Controller
 
     public function create(): Response
     {
+        Gate::authorize('create', Product::class);
+
         return Inertia::render('Products/Create', [
             'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
             'defaultThreshold' => Settings::lowStockThreshold(),
@@ -206,6 +208,8 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request, StockService $stock, AlertService $alerts): RedirectResponse
     {
+        Gate::authorize('create', Product::class);
+
         $data = $request->validated();
         $initialQuantity = (float) ($data['quantity'] ?? 0);
         $initialExpiry = filled($data['expiry_date'] ?? null) ? Carbon::parse($data['expiry_date']) : null;
@@ -266,6 +270,8 @@ class ProductController extends Controller
 
     public function edit(Product $product): Response
     {
+        Gate::authorize('update', $product);
+
         $product->load('category');
 
         return Inertia::render('Products/Edit', [
@@ -278,6 +284,8 @@ class ProductController extends Controller
 
     public function update(UpdateProductRequest $request, Product $product, AlertService $alerts): RedirectResponse
     {
+        Gate::authorize('update', $product);
+
         $product->update($request->validated());
         $alerts->evaluateProduct($product);
 

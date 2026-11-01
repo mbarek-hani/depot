@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import AppLayout from '../../Components/AppLayout.vue';
 import PageHeader from '../../Components/PageHeader.vue';
@@ -19,6 +19,9 @@ const props = defineProps({
     movements: { type: Object, required: true },
     totals: { type: Object, required: true },
 });
+
+const page = usePage();
+const isAdmin = computed(() => page.props.auth?.user?.is_admin === true);
 
 const movementOpen = ref(false);
 const deleteOpen = ref(false);
@@ -39,9 +42,9 @@ function destroy() {
         <PageHeader :title="product.name" :description="`الرمز ${product.sku} · ${product.category_name ?? 'بدون صنف'}`" eyebrow="تفاصيل المنتج">
             <template #actions>
                 <UiButton :href="route('products.index')" variant="outline" icon="arrow-right">المنتجات</UiButton>
-                <UiButton variant="brand-soft" icon="arrows-right-left" @click="movementOpen = true">تسجيل حركة</UiButton>
-                <UiButton :href="route('products.edit', product.id)" icon="pencil">تعديل</UiButton>
-                <UiButton variant="danger-soft" size="icon" icon="trash" aria-label="حذف المنتج" @click="deleteOpen = true" />
+                <UiButton v-if="isAdmin" variant="brand-soft" icon="arrows-right-left" @click="movementOpen = true">تسجيل حركة</UiButton>
+                <UiButton v-if="isAdmin" :href="route('products.edit', product.id)" icon="pencil">تعديل</UiButton>
+                <UiButton v-if="isAdmin" variant="danger-soft" size="icon" icon="trash" aria-label="حذف المنتج" @click="deleteOpen = true" />
             </template>
         </PageHeader>
 
@@ -164,7 +167,7 @@ function destroy() {
                         <h2 class="font-display text-lg font-extrabold text-stone-900 dark:text-white">سجل الحركات</h2>
                         <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">كل عمليات الإدخال والإخراج لهذا المنتج.</p>
                     </div>
-                    <UiButton size="sm" variant="outline" icon="plus" @click="movementOpen = true">حركة جديدة</UiButton>
+                    <UiButton v-if="isAdmin" size="sm" variant="outline" icon="plus" @click="movementOpen = true">حركة جديدة</UiButton>
                 </div>
 
                 <EmptyState v-if="!movements.data.length" icon="arrows-right-left" title="لا توجد حركات" description="ستظهر هنا حركات المخزون الخاصة بهذا المنتج." class="rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-night-800 dark:bg-night-900" />

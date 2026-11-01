@@ -1,6 +1,6 @@
 <script setup>
-import { reactive, ref } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { computed, reactive, ref } from 'vue';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import AppLayout from '../../Components/AppLayout.vue';
 import PageHeader from '../../Components/PageHeader.vue';
@@ -24,6 +24,9 @@ const filters = reactive({
     status: props.filters.status ?? '',
     sort: props.filters.sort ?? 'created_at|desc',
 });
+
+const page = usePage();
+const isAdmin = computed(() => page.props.auth?.user?.is_admin === true);
 
 const selected = ref(null);
 const deleting = ref(false);
@@ -58,7 +61,7 @@ function destroy() {
     <AppLayout title="المنتجات">
         <PageHeader title="المنتجات" description="إدارة جميع المنتجات والكميات وأسعار المخزون." eyebrow="المخزون">
             <template #actions>
-                <UiButton :href="route('products.create')" icon="plus">إضافة منتج</UiButton>
+                <UiButton v-if="isAdmin" :href="route('products.create')" icon="plus">إضافة منتج</UiButton>
             </template>
         </PageHeader>
 
@@ -116,7 +119,7 @@ function destroy() {
 
             <EmptyState v-if="!products.data.length" icon="cube" title="لا توجد منتجات مطابقة" description="جرّب تغيير الفلاتر أو أضف منتجًا جديدًا." class="rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-night-800 dark:bg-night-900">
                 <template #actions>
-                    <UiButton :href="route('products.create')" icon="plus">إضافة منتج</UiButton>
+                    <UiButton v-if="isAdmin" :href="route('products.create')" icon="plus">إضافة منتج</UiButton>
                 </template>
             </EmptyState>
 
@@ -173,8 +176,8 @@ function destroy() {
                                     <td class="px-5 py-3.5">
                                         <div class="flex items-center justify-end gap-1">
                                             <UiButton :href="route('products.show', product.id)" variant="ghost" size="icon" icon="eye" aria-label="عرض المنتج" />
-                                            <UiButton :href="route('products.edit', product.id)" variant="ghost" size="icon" icon="pencil" aria-label="تعديل المنتج" />
-                                            <button type="button" class="inline-flex size-10 items-center justify-center rounded-xl text-rose-500 transition hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-500/10" aria-label="حذف المنتج" @click="selected = product">
+                                            <UiButton v-if="isAdmin" :href="route('products.edit', product.id)" variant="ghost" size="icon" icon="pencil" aria-label="تعديل المنتج" />
+                                            <button v-if="isAdmin" type="button" class="inline-flex size-10 items-center justify-center rounded-xl text-rose-500 transition hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-500/10" aria-label="حذف المنتج" @click="selected = product">
                                                 <Icon name="trash" :size="18" />
                                             </button>
                                         </div>
@@ -224,8 +227,8 @@ function destroy() {
 
                         <div class="mt-3 flex items-center justify-end gap-2">
                             <UiButton :href="route('products.show', product.id)" variant="outline" size="sm" icon="eye">عرض</UiButton>
-                            <UiButton :href="route('products.edit', product.id)" variant="brand-soft" size="sm" icon="pencil">تعديل</UiButton>
-                            <button type="button" class="inline-flex size-9 items-center justify-center rounded-xl text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10" aria-label="حذف المنتج" @click="selected = product">
+                            <UiButton v-if="isAdmin" :href="route('products.edit', product.id)" variant="brand-soft" size="sm" icon="pencil">تعديل</UiButton>
+                            <button v-if="isAdmin" type="button" class="inline-flex size-9 items-center justify-center rounded-xl text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10" aria-label="حذف المنتج" @click="selected = product">
                                 <Icon name="trash" :size="16" />
                             </button>
                         </div>

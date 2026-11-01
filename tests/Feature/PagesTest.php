@@ -24,7 +24,7 @@ class PagesTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::factory()->create();
+        $this->user = User::factory()->admin()->create();
 
         $category = Category::factory()->create(['name' => 'معلبات']);
         $this->product = Product::factory()
@@ -81,6 +81,20 @@ class PagesTest extends TestCase
         $this->get(route('settings.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Settings/Index'));
+
+        $target = User::factory()->create(['name' => 'مستخدم للاختبار']);
+
+        $this->get(route('users.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Users/Index'));
+
+        $this->get(route('users.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Users/Create'));
+
+        $this->get(route('users.edit', $target))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Users/Edit'));
     }
 
     public function test_all_report_types_render(): void
@@ -126,7 +140,7 @@ class PagesTest extends TestCase
                 ->has('chart.labels', 7));
     }
 
-    public function test_every_authenticated_user_can_manage_inventory(): void
+    public function test_admin_can_manage_inventory(): void
     {
         $this->actingAs($this->user);
 

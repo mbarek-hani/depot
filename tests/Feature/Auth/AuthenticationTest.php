@@ -31,6 +31,37 @@ class AuthenticationTest extends TestCase
         ])->assertRedirect(route('dashboard'));
 
         $this->assertAuthenticatedAs($user);
+        $this->assertNotNull($user->fresh()->last_login_at);
+    }
+
+    public function test_blocked_user_cannot_login(): void
+    {
+        $user = User::factory()->blocked()->create([
+            'name' => 'خالد الحربي',
+            'password' => 'Password123',
+        ]);
+
+        $this->from(route('login'))
+            ->post(route('login.store'), [
+                'name' => 'خالد الحربي',
+                'password' => 'Password123',
+            ])
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('name');
+
+        $this->assertGuest();
+        $this->assertNull($user->fresh()->last_login_at);
+    }
+
+    public function test_blocked_user_sessions_are_ended(): void
+    {
+        $user = User::factory()->blocked()->create();
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
     }
 
     public function test_invalid_password_is_rejected(): void

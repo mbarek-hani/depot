@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 
@@ -12,26 +13,32 @@ use function Laravel\Prompts\info;
 use function Laravel\Prompts\password;
 use function Laravel\Prompts\text;
 
-class ChangeUserPasswordCommand extends Command
+class ChangeAdminPasswordCommand extends Command
 {
-    protected $signature = 'user:password
-                            {name? : the name of the account}
+    protected $signature = 'admin:password
+                            {name? : the name of the admin account}
                             {--password= : the new password}';
 
-    protected $description = 'Change the password of a local account';
+    protected $description = 'Change the password of an admin account';
 
     public function handle(): int
     {
         $name = trim((string) ($this->argument('name') ?: text(
-            label: 'Account name',
-            placeholder: 'ex: noreddine',
+            label: 'Admin name',
+            placeholder: 'ex: admin',
             required: true,
         )));
 
-        $user = User::query()->where('name', $name)->first();
+        $admin = User::query()->where('name', $name)->first();
 
-        if (! $user) {
+        if (! $admin) {
             error('No account was found with that name.');
+
+            return self::FAILURE;
+        }
+
+        if (! $admin->isAdmin()) {
+            error('This account is not an admin account.');
 
             return self::FAILURE;
         }
@@ -55,9 +62,14 @@ class ChangeUserPasswordCommand extends Command
             return self::FAILURE;
         }
 
-        $user->update(['password' => $newPassword]);
+        $admin->update([
+            'password' => $newPassword,
+            'remember_token' => null,
+        ]);
 
-        info('Password updated for "'.$user->name.'".');
+        DB::table('sessions')->where('user_id', $admin->id)->delete();
+
+        info('Password updated for admin "'.$admin->name.'".');
 
         return self::SUCCESS;
     }

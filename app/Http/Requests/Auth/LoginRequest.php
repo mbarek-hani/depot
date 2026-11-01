@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -34,6 +35,16 @@ class LoginRequest extends FormRequest
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
+
+        $user = User::query()->where('name', $this->string('name'))->first();
+
+        if ($user && ! $user->isActive()) {
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'name' => 'تم إيقاف هذا الحساب. يرجى التواصل مع مدير النظام.',
+            ]);
+        }
 
         if (! Auth::attempt($this->only('name', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());

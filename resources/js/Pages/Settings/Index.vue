@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import AppLayout from '../../Components/AppLayout.vue';
@@ -16,12 +16,13 @@ const props = defineProps({
 
 const page = usePage();
 const user = page.props.auth?.user;
+const isAdmin = computed(() => user?.is_admin === true);
 
-const tabs = [
+const tabs = computed(() => [
     { key: 'general', label: 'إعدادات النظام', icon: 'settings' },
     { key: 'appearance', label: 'المظهر', icon: 'sparkles' },
     { key: 'account', label: 'حسابي', icon: 'user' },
-];
+].filter((item) => item.key !== 'general' || isAdmin.value));
 
 const inputClass = 'h-11 w-full rounded-xl border border-stone-300 bg-white px-3.5 text-sm text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-400/20 dark:border-night-800 dark:bg-night-950 dark:text-white';
 const textareaClass = 'min-h-20 w-full rounded-xl border border-stone-300 bg-white px-3.5 py-3 text-sm text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-400/20 dark:border-night-800 dark:bg-night-950 dark:text-white';
@@ -147,7 +148,7 @@ onBeforeUnmount(() => window.removeEventListener('theme-changed', syncTheme));
 
                 <div class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[11px] leading-6 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
                     <Icon name="shield" :size="18" class="mt-0.5 shrink-0" />
-                    <p>تُنشأ الحسابات محليًا عبر الأمر <span class="rounded bg-white/70 px-1.5 py-0.5 font-mono dark:bg-night-950/50">php artisan user:create</span>، ويمكن تغيير كلمة المرور عبر الأمر <span class="rounded bg-white/70 px-1.5 py-0.5 font-mono dark:bg-night-950/50">php artisan user:password</span>.</p>
+                    <p>تُنشأ حسابات المدير عبر <span class="rounded bg-white/70 px-1.5 py-0.5 font-mono dark:bg-night-950/50">php artisan admin:create</span>، ويمكن تغيير كلمة مروره عبر <span class="rounded bg-white/70 px-1.5 py-0.5 font-mono dark:bg-night-950/50">php artisan admin:password</span>. أما حسابات المستخدمين فتُدار من صفحة المستخدمين.</p>
                 </div>
             </template>
 
@@ -230,6 +231,11 @@ onBeforeUnmount(() => window.removeEventListener('theme-changed', syncTheme));
                                 </div>
                                 <div class="flex justify-end"><UiButton type="submit" variant="secondary" icon="lock" :disabled="password.processing">تحديث كلمة المرور</UiButton></div>
                             </form>
+
+                            <p v-if="!isAdmin" class="mt-4 flex items-start gap-2 rounded-xl bg-stone-50 p-3 text-[11px] leading-5 text-stone-500 dark:bg-night-950/60 dark:text-stone-400">
+                                <Icon name="info" :size="15" class="mt-0.5 shrink-0 text-brand-600 dark:text-brand-300" />
+                                إذا نسيت كلمة المرور ولم تستطع الدخول، اطلب من مدير النظام إعادة تعيينها لك.
+                            </p>
                         </div>
                     </div>
 
@@ -238,7 +244,7 @@ onBeforeUnmount(() => window.removeEventListener('theme-changed', syncTheme));
                             <span class="flex size-16 items-center justify-center rounded-full bg-brand-100 font-display text-xl font-extrabold text-brand-800 dark:bg-brand-400/15 dark:text-brand-300">{{ user?.name?.slice(0, 1) }}</span>
                             <h3 class="mt-3 font-display text-base font-extrabold text-stone-900 dark:text-white">{{ user?.name }}</h3>
                             <p class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">حساب محلي</p>
-                            <div class="mt-3"><Badge tone="brand">صلاحية كاملة</Badge></div>
+                            <div class="mt-3"><Badge :tone="isAdmin ? 'brand' : 'neutral'">{{ user?.role_label }}</Badge></div>
                         </div>
 
                         <dl class="mt-5 space-y-3 border-t border-stone-100 pt-4 text-xs dark:border-night-800">
@@ -251,8 +257,12 @@ onBeforeUnmount(() => window.removeEventListener('theme-changed', syncTheme));
                                 <dd class="font-semibold text-stone-700 dark:text-stone-200">{{ user?.updated_human ?? '—' }}</dd>
                             </div>
                             <div class="flex items-center justify-between gap-3">
+                                <dt class="text-stone-400">آخر دخول</dt>
+                                <dd class="font-semibold text-stone-700 dark:text-stone-200">{{ user?.last_login_formatted ?? '—' }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-3">
                                 <dt class="text-stone-400">الصلاحية</dt>
-                                <dd class="font-semibold text-stone-700 dark:text-stone-200">صلاحية كاملة</dd>
+                                <dd class="font-semibold text-stone-700 dark:text-stone-200">{{ user?.role_label }}</dd>
                             </div>
                         </dl>
                     </div>

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
@@ -12,19 +13,19 @@ use function Laravel\Prompts\info;
 use function Laravel\Prompts\password;
 use function Laravel\Prompts\text;
 
-class CreateUserCommand extends Command
+class CreateAdminCommand extends Command
 {
-    protected $signature = 'user:create
-                            {--name= : the name of the account}
-                            {--password= : the password of the account}';
+    protected $signature = 'admin:create
+                            {--name= : the name of the admin account}
+                            {--password= : the password of the admin account}';
 
-    protected $description = 'Create a local account';
+    protected $description = 'Create an admin account';
 
     public function handle(): int
     {
         $name = trim((string) ($this->option('name') ?: text(
             label: 'Name',
-            placeholder: 'ex: noreddine',
+            placeholder: 'ex: admin',
             required: true,
         )));
 
@@ -59,10 +60,12 @@ class CreateUserCommand extends Command
         User::query()->create([
             'name' => $name,
             'password' => $password,
+            'role' => UserRole::Admin,
+            'is_active' => true,
             'theme' => 'system',
         ]);
 
-        info('Account "'.$name.'" was created successfully.');
+        info('Admin account "'.$name.'" was created successfully.');
 
         return self::SUCCESS;
     }

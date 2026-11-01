@@ -14,7 +14,7 @@ class CategoryManagementTest extends TestCase
 
     public function test_category_with_archived_products_cannot_be_deleted(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
         $category = Category::factory()->create();
         Product::factory()->for($category)->create()->delete();
 
@@ -27,7 +27,7 @@ class CategoryManagementTest extends TestCase
 
     public function test_empty_category_can_be_deleted(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
         $category = Category::factory()->create();
 
         $this->actingAs($user)
