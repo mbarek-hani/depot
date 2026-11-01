@@ -59,7 +59,7 @@ function changePeriod(period) {
         <PageHeader :title="`مرحبًا، ${user?.name}`" description="إليك نظرة سريعة على حالة المخزون والتنبيهات والحركات الأخيرة." eyebrow="نظرة عامة">
             <template #actions>
                 <UiButton :href="route('reports.index')" variant="outline" icon="download">تصدير تقرير</UiButton>
-                <UiButton :href="route('products.create')" icon="plus">إضافة منتج</UiButton>
+                <UiButton v-if="user?.is_admin" :href="route('products.create')" icon="plus">إضافة منتج</UiButton>
             </template>
         </PageHeader>
 
