@@ -16,14 +16,12 @@ return new class extends Migration
             $table->string('unit', 30)->default('قطعة');
             $table->decimal('quantity', 12, 2)->default(0);
             $table->decimal('low_stock_threshold', 12, 2)->nullable();
-            $table->date('expiry_date')->nullable();
             $table->decimal('cost_price', 12, 2)->default(0);
             $table->decimal('sale_price', 12, 2)->default(0);
             $table->text('notes')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['expiry_date']);
             $table->index(['quantity']);
             $table->index(['category_id', 'name']);
         });
