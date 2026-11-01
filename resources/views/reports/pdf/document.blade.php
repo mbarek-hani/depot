@@ -6,8 +6,7 @@
     $phone = Settings::get('association_phone');
     $email = Settings::get('association_email');
     $footer = Settings::get('report_footer');
-    $logo = collect(['images/logo.png', 'images/logo.jpg', 'images/logo.jpeg', 'images/logo.svg'])
-        ->first(fn (string $path) => is_file(public_path($path)));
+    $logo = 'images/logo.jpeg';
     $hasLogo = $logo !== null;
     $logo = $logo ? str_replace('\\', '/', public_path($logo)) : null;
 @endphp
