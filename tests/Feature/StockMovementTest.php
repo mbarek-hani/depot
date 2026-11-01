@@ -200,6 +200,29 @@ class StockMovementTest extends TestCase
         $this->assertNull($batch->reason);
     }
 
+    public function test_new_product_without_initial_stock_does_not_trigger_out_of_stock_alert(): void
+    {
+        $user = User::factory()->admin()->create();
+        $category = Category::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('products.store'), [
+                'name' => 'منتج بدون رصيد',
+                'category_id' => $category->id,
+                'unit' => 'كيس',
+                'cost_price' => 10,
+                'sale_price' => 15,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $product = Product::query()->where('name', 'منتج بدون رصيد')->firstOrFail();
+
+        app(AlertService::class)->evaluateProduct($product);
+
+        $this->assertSame(0, $product->movements()->count());
+        $this->assertSame(0, $user->notifications()->count());
+    }
+
     public function test_stock_cannot_go_negative(): void
     {
         $user = User::factory()->admin()->create();

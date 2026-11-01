@@ -35,13 +35,17 @@ class AlertService
         $stockStatus = $product->stockStatus();
 
         if ($stockStatus === StockStatus::Out) {
-            $sent += $this->notify(
-                $product,
-                AlertType::LowStock,
-                'نفد المخزون',
-                "نفدت كمية «{$product->name}» بالكامل من المستودع.",
-                'danger',
-            );
+            if ($product->hasReceivedStock()) {
+                $sent += $this->notify(
+                    $product,
+                    AlertType::LowStock,
+                    'نفد المخزون',
+                    "نفدت كمية «{$product->name}» بالكامل من المستودع.",
+                    'danger',
+                );
+            } else {
+                $this->resolve($product, AlertType::LowStock);
+            }
         } elseif ($stockStatus === StockStatus::Low) {
             $sent += $this->notify(
                 $product,
@@ -125,7 +129,7 @@ class AlertService
 
     protected function recipients(): Collection
     {
-        return User::query()->get();
+        return User::query()->active()->get();
     }
 
     protected function alreadyUnread(User $user, Product $product, AlertType $type): bool

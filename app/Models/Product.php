@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ExpiryStatus;
+use App\Enums\StockMovementType;
 use App\Enums\StockStatus;
 use App\Support\Settings;
 use Illuminate\Database\Eloquent\Builder;
@@ -92,6 +93,11 @@ class Product extends Model
     public function lowStockThresholdValue(): float
     {
         return (float) ($this->low_stock_threshold ?? Settings::lowStockThreshold());
+    }
+
+    public function hasReceivedStock(): bool
+    {
+        return $this->movements()->where('type', StockMovementType::In)->exists();
     }
 
     public function stockStatus(): StockStatus
