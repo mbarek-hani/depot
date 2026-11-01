@@ -73,14 +73,7 @@ class Settings
 
     public static function logoUrl(): ?string
     {
-        $path = collect([
-            'images/logo.png',
-            'images/logo.jpg',
-            'images/logo.jpeg',
-            'images/logo.svg',
-        ])->first(fn (string $path) => is_file(public_path($path)));
-
-        return $path ? asset($path) : null;
+        return asset('images/logo.jpeg');
     }
 
     public static function currency(): string
