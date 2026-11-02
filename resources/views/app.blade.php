@@ -6,6 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#facc15">
 
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo.jpeg') }}">
+
     <title inertia>{{ config('app.name') }}</title>
 
     <script>
