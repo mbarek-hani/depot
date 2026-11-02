@@ -78,11 +78,6 @@ const inputClass = 'h-11 w-full rounded-xl border border-stone-300 bg-white px-3
                         <Icon name="arrow-left" :size="18" />
                     </UiButton>
                 </form>
-
-                <div class="mt-6 flex items-start gap-2.5 rounded-xl border border-stone-200 bg-white/60 p-3.5 text-[11px] leading-5 text-stone-500 dark:border-night-800 dark:bg-night-900/50 dark:text-stone-400">
-                    <Icon name="info" :size="16" class="mt-0.5 shrink-0 text-brand-600 dark:text-brand-300" />
-                    <p>لا يوجد تسجيل عام. تُنشأ حسابات المستخدمين من قبل مدير النظام. إذا نسيت كلمة المرور، تواصل مع مدير النظام لإعادة تعيينها.</p>
-                </div>
             </div>
         </div>
     </div>
