@@ -12,7 +12,6 @@ const app = page.props.app ?? {};
 const form = useForm({
     name: '',
     password: '',
-    remember: false,
 });
 
 function submit() {
@@ -66,11 +65,6 @@ const inputClass = 'h-11 w-full rounded-xl border border-stone-300 bg-white px-3
                             <input v-model="form.password" type="password" :class="inputClass" class="ps-10" placeholder="••••••••" autocomplete="current-password">
                         </div>
                         <span v-if="form.errors.password" class="block text-[11px] font-medium text-rose-600">{{ form.errors.password }}</span>
-                    </label>
-
-                    <label class="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-stone-600 dark:text-stone-300">
-                        <input v-model="form.remember" type="checkbox" class="size-4 rounded border-stone-300 text-brand-500 focus:ring-brand-400 dark:border-night-700 dark:bg-night-900">
-                        تذكرني على هذا الجهاز
                     </label>
 
                     <UiButton type="submit" size="lg" class="w-full" :disabled="form.processing">
