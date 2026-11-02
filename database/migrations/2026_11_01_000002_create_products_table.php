@@ -20,7 +20,6 @@ return new class extends Migration
             $table->decimal('sale_price', 12, 2)->default(0);
             $table->text('notes')->nullable();
             $table->timestamps();
-            $table->softDeletes();
 
             $table->index(['quantity']);
             $table->index(['category_id', 'name']);

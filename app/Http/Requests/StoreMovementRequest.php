@@ -17,7 +17,7 @@ class StoreMovementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id' => ['required', 'integer', Rule::exists('products', 'id')->whereNull('deleted_at')],
+            'product_id' => ['required', 'integer', Rule::exists('products', 'id')],
             'type' => ['required', Rule::enum(StockMovementType::class)],
             'reason' => ['nullable', 'required_if:type,out', Rule::enum(MovementReason::class)],
             'expiry_date' => ['nullable', 'date', 'prohibited_if:type,out'],

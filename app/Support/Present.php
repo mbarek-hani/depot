@@ -176,8 +176,7 @@ class Present
             'product_name' => $product?->name ?? 'منتج محذوف',
             'product_sku' => $product?->sku,
             'product_unit' => $product?->unit,
-            'product_archived' => $product?->trashed() ?? false,
-            'product_url' => $withProduct && $product && ! $product->trashed() ? route('products.show', $product) : null,
+            'product_url' => $withProduct && $product ? route('products.show', $product) : null,
             'user_name' => $movement->user?->name,
             'type' => $type->value,
             'type_label' => $type->label(),
@@ -209,7 +208,6 @@ class Present
             'color_class' => $category->colorClasses(),
             'description' => $category->description,
             'products_count' => (int) ($category->products_count ?? 0),
-            'all_products_count' => (int) ($category->all_products_count ?? 0),
             'quantity_total' => (float) ($category->quantity_total ?? 0),
             'quantity_total_formatted' => Format::quantity($category->quantity_total ?? 0),
         ];

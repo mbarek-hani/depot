@@ -173,7 +173,6 @@ class ReportService
         $batches = StockMovement::query()
             ->activeBatches()
             ->with(['product.category'])
-            ->whereHas('product', fn (Builder $query) => $query->whereNull('deleted_at'))
             ->whereNotNull('expiry_date')
             ->when($categoryId, fn (Builder $query) => $query->whereHas('product', fn (Builder $query) => $query->where('category_id', $categoryId)))
             ->when($status === 'expired', fn (Builder $query) => $query->whereDate('expiry_date', '<', today()))

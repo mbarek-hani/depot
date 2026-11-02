@@ -17,7 +17,6 @@ class CategoryController extends Controller
     {
         $categories = Category::query()
             ->withCount('products')
-            ->withCount(['products as all_products_count' => fn ($query) => $query->withTrashed()])
             ->withSum('products as quantity_total', 'quantity')
             ->orderBy('name')
             ->get();
@@ -57,8 +56,8 @@ class CategoryController extends Controller
     {
         Gate::authorize('delete', $category);
 
-        if ($category->products()->withTrashed()->exists()) {
-            return back()->withErrors(['category' => 'لا يمكن حذف صنف مرتبط بمنتجات. يرجى نقل المنتجات أو أرشفتها أولًا.']);
+        if ($category->products()->exists()) {
+            return back()->withErrors(['category' => 'لا يمكن حذف صنف مرتبط بمنتجات. يرجى حذف منتجاته أولًا.']);
         }
 
         $category->delete();

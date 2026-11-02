@@ -244,7 +244,7 @@ function destroy() {
         <Modal :open="Boolean(selected)" title="تأكيد حذف المنتج" size="sm" @close="selected = null">
             <div v-if="selected" class="flex items-start gap-3 rounded-xl bg-rose-50 p-4 text-sm text-rose-800 dark:bg-rose-500/10 dark:text-rose-200">
                 <Icon name="warning" :size="20" class="mt-0.5 shrink-0" />
-                <p>هل أنت متأكد من حذف «{{ selected.name }}»؟ سيتم أرشفة المنتج وستبقى حركات المخزون محفوظة.</p>
+                <p>هل أنت متأكد من حذف «{{ selected.name }}»؟ سيتم حذف المنتج وكل حركات المخزون المرتبطة به نهائيًا.</p>
             </div>
             <template #footer>
                 <UiButton variant="outline" @click="selected = null">إلغاء</UiButton>

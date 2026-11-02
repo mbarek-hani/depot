@@ -131,13 +131,13 @@ function destroy() {
                             </div>
                             <div v-if="isAdmin" class="flex shrink-0 items-center gap-1">
                                 <UiButton variant="ghost" size="icon" icon="pencil" aria-label="تعديل الصنف" @click="openEdit(category)" />
-                                <button v-if="category.all_products_count === 0" type="button" class="inline-flex size-10 items-center justify-center rounded-xl text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10" aria-label="حذف الصنف" @click="deleting = category">
+                                <button v-if="category.products_count === 0" type="button" class="inline-flex size-10 items-center justify-center rounded-xl text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10" aria-label="حذف الصنف" @click="deleting = category">
                                     <Icon name="trash" :size="18" />
                                 </button>
                             </div>
                         </div>
 
-                        <div class="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-stone-50 p-3 dark:bg-night-950">
+                        <div class="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-stone-50 p-3 dark:bg-night-950">
                             <div>
                                 <p class="text-[10px] font-semibold text-stone-400">المنتجات</p>
                                 <p class="mt-0.5 text-xs font-extrabold text-stone-900 tabular dark:text-white">{{ category.products_count }}</p>
@@ -145,10 +145,6 @@ function destroy() {
                             <div>
                                 <p class="text-[10px] font-semibold text-stone-400">الكميات</p>
                                 <p class="mt-0.5 text-xs font-extrabold text-stone-900 tabular dark:text-white">{{ category.quantity_total_formatted }}</p>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-semibold text-stone-400">الكل</p>
-                                <p class="mt-0.5 text-xs font-extrabold text-stone-900 tabular dark:text-white">{{ category.all_products_count }}</p>
                             </div>
                         </div>
                     </article>

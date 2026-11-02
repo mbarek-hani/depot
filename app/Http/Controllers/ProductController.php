@@ -55,7 +55,6 @@ class ProductController extends Controller
             'out' => Product::outOfStock()->count(),
             'expiring' => StockMovement::query()
                 ->activeBatches()
-                ->whereHas('product', fn ($query) => $query->whereNull('deleted_at'))
                 ->whereNotNull('expiry_date')
                 ->whereDate('expiry_date', '>=', today())
                 ->whereDate('expiry_date', '<=', today()->addDays($warningDays))
@@ -82,7 +81,6 @@ class ProductController extends Controller
         $batchQuery = DB::table('stock_movements as m')
             ->join('products as p', 'p.id', '=', 'm.product_id')
             ->leftJoin('categories as c', 'c.id', '=', 'p.category_id')
-            ->whereNull('p.deleted_at')
             ->where('m.type', StockMovementType::In->value)
             ->where('m.quantity_remaining', '>', 0)
             ->select([
@@ -106,7 +104,6 @@ class ProductController extends Controller
 
         $productQuery = DB::table('products as p')
             ->leftJoin('categories as c', 'c.id', '=', 'p.category_id')
-            ->whereNull('p.deleted_at')
             ->whereNotExists(function ($query) {
                 $query->selectRaw('1')
                     ->from('stock_movements as m')
@@ -304,6 +301,6 @@ class ProductController extends Controller
 
         return redirect()
             ->route('products.index')
-            ->with('status', 'تم أرشفة المنتج «'.$name.'».');
+            ->with('status', 'تم حذف المنتج «'.$name.'».');
     }
 }

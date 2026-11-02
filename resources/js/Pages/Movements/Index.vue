@@ -112,7 +112,7 @@ function clear() {
                                     <td class="px-4 py-3.5">
                                         <Link v-if="movement.product_url" :href="movement.product_url" class="block max-w-48 truncate text-xs font-bold text-stone-900 hover:text-brand-700 dark:text-white dark:hover:text-brand-300">{{ movement.product_name }}</Link>
                                         <span v-else class="block max-w-48 truncate text-xs font-semibold text-stone-400">{{ movement.product_name }}</span>
-                                        <span class="mt-0.5 block font-mono text-[10px] text-stone-400">{{ movement.product_sku }}<template v-if="movement.product_archived"> · مؤرشف</template></span>
+                                        <span class="mt-0.5 block font-mono text-[10px] text-stone-400">{{ movement.product_sku }}</span>
                                     </td>
                                     <td class="px-4 py-3.5"><Badge :tone="movement.type_tone" dot>{{ movement.type_label }}</Badge></td>
                                     <td class="px-4 py-3.5 text-sm font-extrabold tabular" :class="movement.is_in ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">{{ movement.sign }}{{ movement.quantity_formatted }}</td>
@@ -132,7 +132,7 @@ function clear() {
                             <div class="min-w-0">
                                 <Link v-if="movement.product_url" :href="movement.product_url" class="block truncate text-sm font-bold text-stone-900 dark:text-white">{{ movement.product_name }}</Link>
                                 <span v-else class="block truncate text-sm font-bold text-stone-500 dark:text-stone-400">{{ movement.product_name }}</span>
-                                <p class="mt-0.5 font-mono text-[10px] text-stone-400">{{ movement.product_sku }}<template v-if="movement.product_archived"> · مؤرشف</template></p>
+                                <p class="mt-0.5 font-mono text-[10px] text-stone-400">{{ movement.product_sku }}</p>
                             </div>
                             <Badge :tone="movement.type_tone" dot>{{ movement.type_label }}</Badge>
                         </div>

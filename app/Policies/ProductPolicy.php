@@ -31,9 +31,4 @@ class ProductPolicy
     {
         return $user->isAdmin() && $user->isActive();
     }
-
-    public function restore(User $user, Product $product): bool
-    {
-        return $user->isAdmin() && $user->isActive();
-    }
 }

@@ -46,14 +46,12 @@ class DashboardController extends Controller
             'out_of_stock' => (clone $productQuery)->outOfStock()->count(),
             'expiring' => StockMovement::query()
                 ->activeBatches()
-                ->whereHas('product', fn ($query) => $query->whereNull('deleted_at'))
                 ->whereNotNull('expiry_date')
                 ->whereDate('expiry_date', '>=', today())
                 ->whereDate('expiry_date', '<=', today()->addDays($warningDays))
                 ->count(),
             'expired' => StockMovement::query()
                 ->activeBatches()
-                ->whereHas('product', fn ($query) => $query->whereNull('deleted_at'))
                 ->whereNotNull('expiry_date')
                 ->whereDate('expiry_date', '<', today())
                 ->count(),
@@ -135,7 +133,6 @@ class DashboardController extends Controller
         $expiringBatches = StockMovement::query()
             ->activeBatches()
             ->with(['product.category'])
-            ->whereHas('product', fn ($query) => $query->whereNull('deleted_at'))
             ->whereNotNull('expiry_date')
             ->whereDate('expiry_date', '>=', today())
             ->whereDate('expiry_date', '<=', today()->addDays($warningDays))

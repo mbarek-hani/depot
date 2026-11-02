@@ -233,7 +233,7 @@ function destroy() {
         <Modal :open="deleteOpen" title="تأكيد حذف المنتج" size="sm" @close="deleteOpen = false">
             <div class="flex items-start gap-3 rounded-xl bg-rose-50 p-4 text-sm text-rose-800 dark:bg-rose-500/10 dark:text-rose-200">
                 <Icon name="warning" :size="20" class="mt-0.5 shrink-0" />
-                <p>سيتم أرشفة «{{ product.name }}». ستبقى الحركات محفوظة في السجل.</p>
+                <p>سيتم حذف «{{ product.name }}» وكل حركات المخزون المرتبطة به نهائيًا.</p>
             </div>
             <template #footer>
                 <UiButton variant="outline" @click="deleteOpen = false">إلغاء</UiButton>

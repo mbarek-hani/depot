@@ -11,12 +11,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 class Product extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'category_id',
@@ -51,12 +50,12 @@ class Product extends Model
 
     public static function generateSku(): string
     {
-        $sequence = (int) self::withTrashed()->max('id') + 1;
+        $sequence = (int) self::max('id') + 1;
 
         do {
             $sku = 'PRD-'.str_pad((string) $sequence, 5, '0', STR_PAD_LEFT);
             $sequence++;
-        } while (self::withTrashed()->where('sku', $sku)->exists());
+        } while (self::where('sku', $sku)->exists());
 
         return $sku;
     }

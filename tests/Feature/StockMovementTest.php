@@ -304,7 +304,7 @@ class StockMovementTest extends TestCase
         }
     }
 
-    public function test_archiving_product_resolves_open_alerts(): void
+    public function test_deleting_product_resolves_open_alerts(): void
     {
         $user = User::factory()->admin()->create();
         $product = Product::factory()->depleted()->create();
@@ -317,6 +317,7 @@ class StockMovementTest extends TestCase
             ->delete(route('products.destroy', $product))
             ->assertRedirect(route('products.index'));
 
+        $this->assertDatabaseMissing('products', ['id' => $product->id]);
         $this->assertSame(0, $user->unreadNotifications()->count());
     }
 
