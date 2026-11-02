@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
+import { CATEGORY_PALETTE } from '../charts';
 import AppLayout from '../Components/AppLayout.vue';
 import PageHeader from '../Components/PageHeader.vue';
 import StatCard from '../Components/StatCard.vue';
@@ -114,7 +115,23 @@ function changePeriod(period) {
                     <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">حسب الأصناف</p>
 
                     <template v-if="categoryChart.labels?.length">
-                        <ChartCanvas type="doughnut" :payload="categoryChart" :height="220" />
+                        <ChartCanvas type="doughnut" :payload="categoryChart" :height="190" />
+                        <div class="mt-3 max-h-36 space-y-1.5 overflow-y-auto px-1 scrollbar-thin">
+                            <div
+                                v-for="(label, index) in categoryChart.labels"
+                                :key="label"
+                                class="flex items-center justify-between gap-2 text-xs"
+                            >
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span
+                                        class="size-2.5 shrink-0 rounded-full"
+                                        :style="{ backgroundColor: CATEGORY_PALETTE[index % CATEGORY_PALETTE.length] }"
+                                    ></span>
+                                    <span class="truncate font-semibold text-stone-700 dark:text-stone-300">{{ label }}</span>
+                                </div>
+                                <span class="shrink-0 font-bold text-stone-900 tabular dark:text-white">{{ categoryChart.values[index] }}</span>
+                            </div>
+                        </div>
                         <div class="mt-3 rounded-xl bg-stone-50 p-3 text-center dark:bg-night-950">
                             <p class="text-[11px] font-semibold text-stone-500 dark:text-stone-400">إجمالي الكميات</p>
                             <p class="mt-0.5 font-display text-xl font-extrabold text-stone-900 tabular dark:text-white">{{ stats.quantity_formatted }}</p>

@@ -30,6 +30,25 @@ Chart.register(
 Chart.defaults.font.family = "'Cairo', sans-serif";
 Chart.defaults.font.size = 12;
 
+export const CATEGORY_PALETTE = [
+    '#facc15',
+    '#ca8a04',
+    '#a83232',
+    '#0f766e',
+    '#0284c7',
+    '#7c3aed',
+    '#ea580c',
+    '#e11d48',
+    '#059669',
+    '#4f46e5',
+    '#db2777',
+    '#0891b2',
+    '#65a30d',
+    '#9333ea',
+    '#d97706',
+    '#2563eb',
+];
+
 function cssColor(variable, fallback) {
     const value = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
 
@@ -115,6 +134,8 @@ export function chartConfig(type, payload) {
     const colors = palette();
 
     if (type === 'doughnut') {
+        const bgColors = (payload.labels || []).map((_, i) => CATEGORY_PALETTE[i % CATEGORY_PALETTE.length]);
+
         return {
             type,
             data: {
@@ -122,7 +143,7 @@ export function chartConfig(type, payload) {
                 datasets: [
                     {
                         data: payload.values,
-                        backgroundColor: colors.colors,
+                        backgroundColor: bgColors,
                         borderColor: document.documentElement.classList.contains('dark')
                             ? cssColor('--color-night-900', '#151310')
                             : '#ffffff',
@@ -133,6 +154,12 @@ export function chartConfig(type, payload) {
             },
             options: {
                 ...baseOptions(type),
+                plugins: {
+                    ...baseOptions(type).plugins,
+                    legend: {
+                        display: false,
+                    },
+                },
                 cutout: '68%',
             },
         };
