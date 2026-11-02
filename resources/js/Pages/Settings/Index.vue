@@ -145,11 +145,6 @@ onBeforeUnmount(() => window.removeEventListener('theme-changed', syncTheme));
                         </div>
                     </form>
                 </div>
-
-                <div class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[11px] leading-6 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
-                    <Icon name="shield" :size="18" class="mt-0.5 shrink-0" />
-                    <p>تُنشأ حسابات المدير عبر <span class="rounded bg-white/70 px-1.5 py-0.5 font-mono dark:bg-night-950/50">php artisan admin:create</span>، ويمكن تغيير كلمة مروره عبر <span class="rounded bg-white/70 px-1.5 py-0.5 font-mono dark:bg-night-950/50">php artisan admin:password</span>. أما حسابات المستخدمين فتُدار من صفحة المستخدمين.</p>
-                </div>
             </template>
 
             <template v-else-if="tab === 'appearance'">
