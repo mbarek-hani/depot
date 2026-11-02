@@ -50,7 +50,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'notifications' => fn () => $user ? [
                 'unread' => $user->unreadNotifications()->count(),
-                'latest' => $user->notifications()->latest()->take(5)->get()
+                'latest' => $user->unreadNotifications()->latest()->take(5)->get()
                     ->map(fn ($notification) => Present::notification($notification))
                     ->all(),
             ] : [

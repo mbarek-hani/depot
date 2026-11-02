@@ -38,6 +38,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
     Route::patch('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::get('/notifications/{notification}', [NotificationController::class, 'open'])->name('notifications.open');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');

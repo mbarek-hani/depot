@@ -17,7 +17,10 @@ const userId = computed(() => page.props.auth?.user?.id);
 async function refresh() {
     try {
         const response = await fetch(route('notifications.unread-count'), {
-            headers: { Accept: 'application/json' },
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
         });
 
         if (!response.ok) {
@@ -121,22 +124,22 @@ onBeforeUnmount(() => {
             </div>
 
             <div v-if="latest.length" class="max-h-80 overflow-y-auto">
-                <Link
+                <div
                     v-for="item in latest"
                     :key="item.id"
-                    :href="item.url"
-                    class="block border-b border-stone-50 px-4 py-3 transition last:border-0 hover:bg-stone-50 dark:border-night-800/50 dark:hover:bg-night-800/50"
-                    @click="open = false"
+                    class="border-b border-stone-50 transition last:border-0 hover:bg-stone-50 dark:border-night-800/50 dark:hover:bg-night-800/50"
                 >
-                    <div class="flex items-start gap-2.5">
-                        <span class="mt-0.5 size-2 shrink-0 rounded-full" :class="item.read ? 'bg-stone-300' : 'bg-brand-500'"></span>
-                        <div class="min-w-0">
-                            <p class="truncate text-xs font-bold text-stone-800 dark:text-stone-100">{{ item.title }}</p>
-                            <p class="mt-0.5 line-clamp-2 text-[11px] leading-5 text-stone-500 dark:text-stone-400">{{ item.message }}</p>
-                            <p class="mt-1 text-[10px] text-stone-400">{{ item.created_human }}</p>
+                    <Link :href="item.url" class="block px-4 py-3" @click="open = false">
+                        <div class="flex items-start gap-2.5">
+                            <span class="mt-0.5 size-2 shrink-0 rounded-full bg-brand-500"></span>
+                            <div class="min-w-0">
+                                <p class="truncate text-xs font-bold text-stone-800 dark:text-stone-100">{{ item.title }}</p>
+                                <p class="mt-0.5 line-clamp-2 text-[11px] leading-5 text-stone-500 dark:text-stone-400">{{ item.message }}</p>
+                                <p class="mt-1 text-[10px] text-stone-400">{{ item.created_human }}</p>
+                            </div>
                         </div>
-                    </div>
-                </Link>
+                    </Link>
+                </div>
             </div>
 
             <p v-else class="px-4 py-8 text-center text-xs text-stone-400">لا توجد إشعارات حاليًا.</p>

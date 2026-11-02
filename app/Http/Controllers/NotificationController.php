@@ -56,6 +56,27 @@ class NotificationController extends Controller
         return redirect($notification->data['url'] ?? route('notifications.index'));
     }
 
+    public function destroy(Request $request, DatabaseNotification $notification): RedirectResponse
+    {
+        abort_unless(
+            (int) $notification->notifiable_id === (int) $request->user()->id
+                && $notification->notifiable_type === $request->user()::class,
+            404,
+        );
+
+        if (! $notification->read_at) {
+            return redirect()
+                ->route('notifications.index')
+                ->with('error', 'يمكن حذف التنبيهات المقروءة فقط.');
+        }
+
+        $notification->delete();
+
+        return redirect()
+            ->route('notifications.index')
+            ->with('status', 'تم حذف التنبيه.');
+    }
+
     public function readAll(Request $request): RedirectResponse
     {
         $request->user()->unreadNotifications()->update(['read_at' => now()]);
@@ -63,8 +84,12 @@ class NotificationController extends Controller
         return back()->with('status', 'تم تعليم جميع الإشعارات كمقروءة.');
     }
 
-    public function unreadCount(Request $request): JsonResponse
+    public function unreadCount(Request $request): JsonResponse|RedirectResponse
     {
+        if (! $request->expectsJson() && ! $request->ajax()) {
+            return redirect()->route('notifications.index');
+        }
+
         return response()->json([
             'unread' => $request->user()->unreadNotifications()->count(),
         ]);
