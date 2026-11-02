@@ -233,6 +233,39 @@ class PagesTest extends TestCase
                 ->where('products.data.0.expiry_date', now()->addDays(4)->toDateString()));
     }
 
+    public function test_movements_index_sorts_by_selected_column(): void
+    {
+        $small = StockMovement::factory()->create([
+            'product_id' => $this->product->id,
+            'type' => StockMovementType::In,
+            'quantity' => 0.5,
+            'quantity_remaining' => 0.5,
+            'occurred_at' => now()->subDays(2),
+        ]);
+
+        $large = StockMovement::factory()->create([
+            'product_id' => $this->product->id,
+            'type' => StockMovementType::In,
+            'quantity' => 99,
+            'quantity_remaining' => 99,
+            'occurred_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($this->user);
+
+        $this->get(route('movements.index', ['sort' => 'quantity|desc']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.sort', 'quantity|desc')
+                ->where('movements.data.0.id', $large->id));
+
+        $this->get(route('movements.index', ['sort' => 'quantity|asc']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.sort', 'quantity|asc')
+                ->where('movements.data.0.id', $small->id));
+    }
+
     public function test_arabic_pagination_labels_are_available(): void
     {
         $this->assertStringContainsString('السابق', __('pagination.previous'));

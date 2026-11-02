@@ -29,7 +29,19 @@ class StockMovementController extends Controller
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'sort' => ['nullable', 'string'],
         ]);
+
+        $sort = $request->string('sort')->toString() ?: 'occurred_at|desc';
+        [$sortColumn, $sortDirection] = array_pad(explode('|', $sort, 2), 2, 'desc');
+
+        if (! in_array($sortColumn, ['occurred_at', 'quantity', 'product_name'], true)) {
+            $sortColumn = 'occurred_at';
+        }
+
+        if (! in_array($sortDirection, ['asc', 'desc'], true)) {
+            $sortDirection = 'desc';
+        }
 
         $filters = [
             'search' => $request->string('search')->trim()->toString(),
@@ -37,6 +49,7 @@ class StockMovementController extends Controller
             'category_id' => $request->integer('category_id') ?: null,
             'from' => $request->date('from'),
             'to' => $request->date('to'),
+            'sort' => $sortColumn.'|'.$sortDirection,
         ];
 
         $baseQuery = StockMovement::query()
@@ -53,8 +66,19 @@ class StockMovementController extends Controller
             'count' => (clone $baseQuery)->count(),
         ];
 
-        $movements = $baseQuery
-            ->latest('occurred_at')
+        $movements = $baseQuery;
+
+        if ($sortColumn === 'product_name') {
+            $movements->orderBy(
+                Product::query()->select('name')->whereColumn('products.id', 'stock_movements.product_id'),
+                $sortDirection,
+            );
+        } else {
+            $movements->orderBy($sortColumn, $sortDirection);
+        }
+
+        $movements = $movements
+            ->orderByDesc('stock_movements.id')
             ->paginate(20)
             ->withQueryString();
 
@@ -67,6 +91,7 @@ class StockMovementController extends Controller
                 'category_id' => $filters['category_id'],
                 'from' => $filters['from']?->format('Y-m-d'),
                 'to' => $filters['to']?->format('Y-m-d'),
+                'sort' => $filters['sort'],
             ],
             'totals' => [
                 'in' => $totals['in'],

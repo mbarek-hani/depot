@@ -27,6 +27,7 @@ const filters = reactive({
     category_id: props.filters.category_id ?? '',
     from: props.filters.from ?? '',
     to: props.filters.to ?? '',
+    sort: props.filters.sort ?? 'occurred_at|desc',
 });
 
 const page = usePage();
@@ -71,18 +72,25 @@ function clear() {
                         <option value="in">إدخال</option>
                         <option value="out">إخراج</option>
                     </select>
-                    <select v-model="filters.category_id" :class="inputClass" class="lg:col-span-3">
+                    <select v-model="filters.category_id" :class="inputClass" class="lg:col-span-6">
                         <option value="">جميع الأصناف</option>
                         <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
                     </select>
-                    <input v-model="filters.from" type="date" :class="inputClass" class="lg:col-span-1" aria-label="من تاريخ" dir="ltr">
-                    <input v-model="filters.to" type="date" :class="inputClass" class="lg:col-span-1" aria-label="إلى تاريخ" dir="ltr">
-                    <UiButton type="submit" icon="filter" class="lg:col-span-1">تصفية</UiButton>
+                    <input v-model="filters.from" type="date" :class="inputClass" class="lg:col-span-3" aria-label="من تاريخ" dir="ltr">
+                    <input v-model="filters.to" type="date" :class="inputClass" class="lg:col-span-3" aria-label="إلى تاريخ" dir="ltr">
+                    <select v-model="filters.sort" :class="inputClass" class="lg:col-span-3" aria-label="ترتيب الحركات">
+                        <option value="occurred_at|desc">الأحدث</option>
+                        <option value="occurred_at|asc">الأقدم</option>
+                        <option value="product_name|asc">اسم المنتج</option>
+                        <option value="quantity|desc">الكمية الأكبر</option>
+                        <option value="quantity|asc">الكمية الأقل</option>
+                    </select>
+                    <div class="flex items-center gap-2 sm:col-span-2 lg:col-span-3">
+                        <UiButton type="submit" icon="filter" class="flex-1">تصفية</UiButton>
+                        <UiButton variant="ghost" @click="clear">مسح</UiButton>
+                    </div>
                 </form>
 
-                <button v-if="filters.search || filters.type || filters.category_id || filters.from || filters.to" type="button" class="mt-3 inline-flex items-center gap-1 text-[11px] font-bold text-brand-700 hover:underline dark:text-brand-300" @click="clear">
-                    <Icon name="x" :size="14" /> مسح الفلاتر
-                </button>
             </div>
 
             <EmptyState v-if="!movements.data.length" icon="arrows-right-left" title="لا توجد حركات مطابقة" description="جرّب تعديل الفلاتر أو سجّل حركة مخزون جديدة." class="rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-night-800 dark:bg-night-900">

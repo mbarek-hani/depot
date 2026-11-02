@@ -86,16 +86,16 @@ function destroy() {
             </div>
 
             <div class="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-card dark:border-night-800 dark:bg-night-900">
-                <form class="grid gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:items-end" @submit.prevent="apply">
-                    <div class="relative lg:col-span-4">
+                <form class="grid gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end" @submit.prevent="apply">
+                    <div class="relative sm:col-span-2 lg:min-w-56 lg:flex-1">
                         <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-stone-400"><Icon name="search" :size="16" /></span>
                         <input v-model="filters.search" :class="inputClass" class="ps-9" placeholder="ابحث بالاسم أو الرمز..." aria-label="البحث في المنتجات">
                     </div>
-                    <select v-model="filters.category_id" :class="inputClass" class="lg:col-span-3" aria-label="تصفية حسب الصنف">
+                    <select v-model="filters.category_id" :class="inputClass" class="lg:w-44" aria-label="تصفية حسب الصنف">
                         <option value="">جميع الأصناف</option>
                         <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
                     </select>
-                    <select v-model="filters.status" :class="inputClass" class="lg:col-span-2" aria-label="تصفية حسب الحالة">
+                    <select v-model="filters.status" :class="inputClass" class="lg:w-36" aria-label="تصفية حسب الحالة">
                         <option value="">كل الحالات</option>
                         <option value="available">متوفر</option>
                         <option value="low">مخزون منخفض</option>
@@ -103,18 +103,18 @@ function destroy() {
                         <option value="expiring">قريب الانتهاء</option>
                         <option value="expired">منتهي الصلاحية</option>
                     </select>
-                    <select v-model="filters.sort" :class="inputClass" class="lg:col-span-2" aria-label="ترتيب المنتجات">
+                    <select v-model="filters.sort" :class="inputClass" class="lg:w-40" aria-label="ترتيب المنتجات">
                         <option value="created_at|desc">الأحدث</option>
                         <option value="name|asc">الاسم</option>
                         <option value="quantity|asc">الكمية الأقل</option>
                         <option value="expiry_date|asc">الصلاحية الأقرب</option>
                     </select>
-                    <UiButton type="submit" icon="filter" class="lg:col-span-1">تصفية</UiButton>
+                    <div class="flex items-center gap-2 sm:col-span-2 lg:w-auto lg:shrink-0">
+                        <UiButton type="submit" icon="filter" class="flex-1 lg:flex-none">تصفية</UiButton>
+                        <UiButton variant="ghost" @click="clear">مسح</UiButton>
+                    </div>
                 </form>
 
-                <button v-if="filters.search || filters.category_id || filters.status || filters.sort !== 'created_at|desc'" type="button" class="mt-3 inline-flex items-center gap-1 text-[11px] font-bold text-brand-700 hover:underline dark:text-brand-300" @click="clear">
-                    <Icon name="x" :size="14" /> مسح الفلاتر
-                </button>
             </div>
 
             <EmptyState v-if="!products.data.length" icon="cube" title="لا توجد منتجات مطابقة" description="جرّب تغيير الفلاتر أو أضف منتجًا جديدًا." class="rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-night-800 dark:bg-night-900">
