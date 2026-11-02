@@ -1,0 +1,155 @@
+name: Release Windows Bundle
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag, for example v1.0.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{ github.event.inputs.version || github.ref_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: curl,dom,fileinfo,gd,intl,mbstring,openssl,pdo_sqlite,sqlite3,xml,xmlwriter,zip
+          coverage: none
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install PHP dependencies for validation
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Check frontend formatting
+        run: npm run format:check
+
+      - name: Build frontend assets
+        env:
+          VITE_REVERB_APP_KEY: depot-public-key
+          VITE_REVERB_PORT: "8080"
+          VITE_REVERB_SCHEME: http
+        run: npm run build
+
+      - name: Prepare test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Run tests
+        run: php artisan test
+
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test
+
+      - name: Install production PHP dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --classmap-authoritative
+
+      - name: Prepare release package
+        run: |
+          set -euo pipefail
+
+          mkdir -p release/depot
+
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='/release' \
+            --exclude='.env' \
+            --exclude='.env.backup' \
+            --exclude='.env.local' \
+            --exclude='.env.production' \
+            --exclude='.phpunit.cache' \
+            --exclude='.phpunit.result.cache' \
+            --exclude='.codex' \
+            --exclude='.cursor' \
+            --exclude='.idea' \
+            --exclude='.vscode' \
+            --exclude='.DS_Store' \
+            --exclude='Thumbs.db' \
+            --exclude='auth.json' \
+            --exclude='_ide_helper.php' \
+            --exclude='Homestead.json' \
+            --exclude='Homestead.yaml' \
+            --exclude='node_modules' \
+            --exclude='tests' \
+            --exclude='phpunit.xml' \
+            --exclude='public/hot' \
+            --exclude='public/fonts-manifest.dev.json' \
+            --exclude='public/storage' \
+            --exclude='public/build/*.map' \
+            --exclude='storage/*.key' \
+            --exclude='storage/logs/*' \
+            --exclude='storage/pail' \
+            --exclude='storage/inertia-devtools' \
+            --exclude='storage/framework/cache/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/testing/*' \
+            --exclude='storage/framework/views/*' \
+            --exclude='database/database.sqlite' \
+            --exclude='bootstrap/cache/*.php' \
+            ./ release/depot/
+
+          mkdir -p \
+            release/depot/storage/app/mpdf \
+            release/depot/storage/app/private \
+            release/depot/storage/app/public \
+            release/depot/storage/framework/cache/data \
+            release/depot/storage/framework/cache/locks \
+            release/depot/storage/framework/sessions \
+            release/depot/storage/framework/views \
+            release/depot/storage/logs \
+            release/depot/bootstrap/cache
+
+          test ! -e release/depot/.env
+          test ! -e release/depot/public/hot
+          test -f release/depot/public/build/manifest.json
+          test -f release/depot/vendor/autoload.php
+
+          cd release
+          zip -r "../depot-windows-${RELEASE_VERSION}.zip" depot
+          cd ..
+          sha256sum "depot-windows-${RELEASE_VERSION}.zip" > "depot-windows-${RELEASE_VERSION}.zip.sha256"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "$RELEASE_VERSION" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_VERSION" \
+              "depot-windows-${RELEASE_VERSION}.zip" \
+              "depot-windows-${RELEASE_VERSION}.zip.sha256" \
+              --clobber
+          else
+            gh release create "$RELEASE_VERSION" \
+              "depot-windows-${RELEASE_VERSION}.zip" \
+              "depot-windows-${RELEASE_VERSION}.zip.sha256" \
+              --title "Depot Windows ${RELEASE_VERSION}" \
+              --generate-notes
+          fi

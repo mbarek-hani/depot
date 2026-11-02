@@ -12,7 +12,6 @@ const app = page.props.app ?? {};
 const form = useForm({
     name: '',
     password: '',
-    remember: false,
 });
 
 function submit() {
@@ -68,21 +67,11 @@ const inputClass = 'h-11 w-full rounded-xl border border-stone-300 bg-white px-3
                         <span v-if="form.errors.password" class="block text-[11px] font-medium text-rose-600">{{ form.errors.password }}</span>
                     </label>
 
-                    <label class="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-stone-600 dark:text-stone-300">
-                        <input v-model="form.remember" type="checkbox" class="size-4 rounded border-stone-300 text-brand-500 focus:ring-brand-400 dark:border-night-700 dark:bg-night-900">
-                        تذكرني على هذا الجهاز
-                    </label>
-
                     <UiButton type="submit" size="lg" class="w-full" :disabled="form.processing">
                         تسجيل الدخول
                         <Icon name="arrow-left" :size="18" />
                     </UiButton>
                 </form>
-
-                <div class="mt-6 flex items-start gap-2.5 rounded-xl border border-stone-200 bg-white/60 p-3.5 text-[11px] leading-5 text-stone-500 dark:border-night-800 dark:bg-night-900/50 dark:text-stone-400">
-                    <Icon name="info" :size="16" class="mt-0.5 shrink-0 text-brand-600 dark:text-brand-300" />
-                    <p>لا يوجد تسجيل عام. تُنشأ حسابات المستخدمين من قبل مدير النظام. إذا نسيت كلمة المرور، تواصل مع مدير النظام لإعادة تعيينها.</p>
-                </div>
             </div>
         </div>
     </div>

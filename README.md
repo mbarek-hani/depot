@@ -81,10 +81,12 @@ REVERB_PORT=8080
 REVERB_SCHEME=http
 
 VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
-VITE_REVERB_HOST="${REVERB_HOST}"
 VITE_REVERB_PORT="${REVERB_PORT}"
 VITE_REVERB_SCHEME="${REVERB_SCHEME}"
 ```
+
+لا تضبط `VITE_REVERB_HOST` في الإنتاج: تستخدم الواجهة اسم المضيف الذي فُتح به
+التطبيق، بينما يتصل الخادم بـ Reverb عبر `REVERB_HOST=127.0.0.1`.
 
 عند استخدام MySQL، غيّر `DB_CONNECTION` وقيم `DB_*` ثم نفّذ `php artisan migrate --seed`. جميع الترحيلات متوافقة مع MySQL.
 
@@ -171,6 +173,21 @@ php artisan schedule:work
 - ملخص الأصناف
 
 تتوفر جميع التقارير لجميع الحسابات النشطة للعرض والتنزيل بصيغة PDF.
+
+## النشر على Windows
+
+لتركيب النظام على جهاز Windows داخل شبكة محلية، راجع دليل النشر الكامل:
+
+```text
+DEPLOY-WINDOWS.md
+```
+
+يشرح الدليل تثبيت Apache وPHP، إعداد اسم المضيف، إنشاء قاعدة البيانات، إنشاء
+حساب المدير، تشغيل Reverb والمجدول، إعداد جدار الحماية، والتحقق من التثبيت.
+
+لإنشاء حزمة إصدار Windows، ادفع وسم إصدار مثل `v1.0.0`. سيشغّل
+`.github/workflows/release.yml` الاختبارات والبناء ثم ينشئ أرشيف ZIP مع ملف
+تحقق SHA-256 في صفحة الإصدارات على GitHub.
 
 ## الاختبارات والجودة
 
