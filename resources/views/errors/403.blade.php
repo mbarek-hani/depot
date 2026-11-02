@@ -8,10 +8,5 @@
 @section('description', 'ليست لديك صلاحية لعرض هذه الصفحة أو تنفيذ هذا الإجراء.')
 
 @section('actions')
-    @auth
-        <a href="{{ route('dashboard') }}">العودة للوحة التحكم</a>
-    @else
-        <a href="{{ route('login') }}">تسجيل الدخول</a>
-    @endauth
-    <a href="{{ url()->previous() }}" class="secondary">رجوع</a>
+    <a href="{{ route('dashboard') }}">العودة للوحة التحكم</a>
 @endsection
