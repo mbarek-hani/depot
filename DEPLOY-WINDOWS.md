@@ -17,57 +17,44 @@ computers on the same local network. The server is not exposed to the internet.
 The client machine does not need Composer, Node.js, npm, Laragon, XAMPP, or
 internet access after the files are copied.
 
-## 1. Choose the hostname
+## 1. Choose the server IP address
 
-The default hostname is the Windows computer name.
+The application is accessed by the Windows desktop's LAN IPv4 address. No
+hostname, DNS entry, or hosts-file change is required.
 
-Check it on the server:
-
-```powershell
-$env:COMPUTERNAME
-```
-
-For example, if the result is `DEPOT-SERVER`, clients will open:
-
-```text
-http://DEPOT-SERVER
-```
-
-You may use a custom hostname such as `depot.lan` if your router supports local
-DNS or if you add a hosts-file entry to each client.
-
-Do not use a `.local` name unless your network is configured for mDNS. Prefer
-the Windows computer name, a router DNS name, or a hosts-file entry. If the
-computer name contains characters that are invalid in hostnames, choose a
-DNS-safe name such as `depot-server`.
-
-### Test the hostname from another LAN computer
+Find the address on the server:
 
 ```powershell
-ping DEPOT-SERVER
-Test-NetConnection -ComputerName DEPOT-SERVER -Port 80
+Get-NetIPAddress -AddressFamily IPv4 |
+    Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.254.*" } |
+    Select-Object InterfaceAlias, IPAddress
 ```
 
-If the name does not resolve:
-
-1. Add a DHCP reservation for the server in the router.
-2. Add a local DNS entry for the chosen hostname if the router supports it.
-3. Otherwise, edit the hosts file on every client computer as Administrator:
+Use the address of the active Ethernet or Wi-Fi adapter. For example:
 
 ```text
-C:\Windows\System32\drivers\etc\hosts
+192.168.1.50
 ```
 
-Add a line using the server's reserved address:
+Clients will open:
 
 ```text
-192.168.1.50 DEPOT-SERVER
+http://192.168.1.50
 ```
 
-Use the chosen hostname later in `APP_URL` and the Apache configuration.
+Create a DHCP reservation for this address in the router so the server keeps the
+same IP. If the address changes later, clients must use the new address.
 
-If the hostname changes later, update `APP_URL` in `.env`, update `ServerName` in
-the Apache virtual host, then run:
+### Test the address from another LAN computer
+
+```powershell
+ping 192.168.1.50
+Test-NetConnection -ComputerName 192.168.1.50 -Port 80
+```
+
+Use this IP address later in `APP_URL`, the Apache configuration, and the setup
+script. If the address changes later, update `APP_URL` in `.env`, update
+`ServerName` in the Apache virtual host, then run:
 
 ```powershell
 cd C:\depot
@@ -213,10 +200,9 @@ Copy-Item "C:\depot\deploy\windows\apache-depot.conf" "C:\Apache24\conf\extra\de
 
 Edit `C:\Apache24\conf\extra\depot.conf`:
 
-- Replace `DEPOT-SERVER` with the chosen hostname.
+- Replace `SERVER-IP` with the reserved LAN IPv4 address, without `http://`.
 - Keep `DocumentRoot` as `C:/depot/public`.
 - Keep `AllowOverride All`.
-- Add the custom hostname to `ServerAlias` if needed.
 
 Add this line near the other `Include` lines in `httpd.conf`:
 
@@ -258,7 +244,7 @@ Run the setup script from an Administrator PowerShell window:
 ```powershell
 powershell -ExecutionPolicy Bypass -File "C:\depot\deploy\windows\setup.ps1" `
     -AppPath "C:\depot" `
-    -Hostname "DEPOT-SERVER" `
+    -ServerIp "192.168.1.50" `
     -PhpExe "C:\php\php.exe"
 ```
 
@@ -357,14 +343,14 @@ Do not forward these ports from the internet.
 On the server:
 
 ```powershell
-Invoke-WebRequest "http://DEPOT-SERVER/up" -UseBasicParsing
+Invoke-WebRequest "http://192.168.1.50/up" -UseBasicParsing
 ```
 
 The health endpoint should return a successful response.
 
 On another LAN computer:
 
-1. Open `http://DEPOT-SERVER`.
+1. Open `http://192.168.1.50`.
 2. Log in with the administrator account.
 3. Create a product.
 4. Create an input movement.
@@ -518,13 +504,14 @@ Confirm that:
 - Port 8080 is allowed through Windows Firewall.
 - `REVERB_APP_KEY` in `.env` is `depot-public-key`.
 - `REVERB_HOST=127.0.0.1`, `REVERB_PORT=8080`, `REVERB_SCHEME=http`.
-- The page was opened using the same hostname used in `APP_URL`.
+- The page was opened using the same IP address used in `APP_URL`.
 - The browser developer tools do not show WebSocket errors.
 
-### The hostname does not resolve
+### Clients cannot reach the server
 
-Use the server's reserved IP address temporarily to confirm that the application
-works, then fix DNS or add the hostname to the client hosts files.
+Confirm that the client and server are on the same LAN, the server IP has not
+changed, and Windows Firewall allows TCP port 80 from `LocalSubnet`. Use
+`ipconfig` on the server to check the current address.
 
 ### PDF generation fails
 
@@ -539,7 +526,7 @@ Confirm:
 
 - Leave the server powered on.
 - Do not let the machine sleep.
-- Access the application through the chosen hostname.
+- Access the application through the reserved LAN IP address.
 - Keep the SQLite database on the local disk.
 - This deployment uses HTTP inside the LAN only.
 - No scheduled database backup is configured.

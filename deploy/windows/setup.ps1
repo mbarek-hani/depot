@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$AppPath = "C:\depot",
-    [string]$Hostname = $env:COMPUTERNAME,
+    [string]$ServerIp = "",
     [string]$PhpExe = "C:\php\php.exe",
     [switch]$Force
 )
@@ -83,17 +83,29 @@ if ((Test-Path -LiteralPath $envPath) -and -not $Force) {
 
 Write-Step "Preparing environment file"
 
-if ([string]::IsNullOrWhiteSpace($Hostname)) {
-    $Hostname = $env:COMPUTERNAME
+if ([string]::IsNullOrWhiteSpace($ServerIp)) {
+    $defaultRoute = Get-NetRoute -AddressFamily IPv4 -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue |
+        Sort-Object -Property RouteMetric |
+        Select-Object -First 1
+
+    if ($defaultRoute) {
+        $ServerIp = Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $defaultRoute.InterfaceIndex -ErrorAction SilentlyContinue |
+            Where-Object { $_.IPAddress -notlike "169.254.*" } |
+            Select-Object -First 1 -ExpandProperty IPAddress
+    }
 }
 
-$Hostname = $Hostname.Trim()
-
-if ($Hostname -match "^https?://") {
-    $appUrl = $Hostname.TrimEnd("/")
-} else {
-    $appUrl = "http://" + $Hostname.TrimEnd("/")
+if ([string]::IsNullOrWhiteSpace($ServerIp)) {
+    Stop-Setup "Could not detect the LAN IPv4 address. Run ipconfig and pass it with -ServerIp."
 }
+
+$ServerIp = $ServerIp.Trim()
+
+if ($ServerIp -notmatch "^\d{1,3}(\.\d{1,3}){3}$") {
+    Stop-Setup "ServerIp must be an IPv4 address such as 192.168.1.50, without http:// or a path."
+}
+
+$appUrl = "http://" + $ServerIp
 
 $reverbSecret = (& $PhpExe -r "echo bin2hex(random_bytes(32));").Trim()
 
@@ -180,6 +192,7 @@ foreach ($directory in @("database", "storage", "bootstrap\cache")) {
 }
 
 Write-Host "`nSetup completed." -ForegroundColor Green
+Write-Host "Server IP: $ServerIp"
 Write-Host "Application URL: $appUrl"
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow

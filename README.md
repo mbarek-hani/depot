@@ -85,7 +85,7 @@ VITE_REVERB_PORT="${REVERB_PORT}"
 VITE_REVERB_SCHEME="${REVERB_SCHEME}"
 ```
 
-لا تضبط `VITE_REVERB_HOST` في الإنتاج: تستخدم الواجهة اسم المضيف الذي فُتح به
+لا تضبط `VITE_REVERB_HOST` في الإنتاج: تستخدم الواجهة عنوان IP الذي فُتح به
 التطبيق، بينما يتصل الخادم بـ Reverb عبر `REVERB_HOST=127.0.0.1`.
 
 عند استخدام MySQL، غيّر `DB_CONNECTION` وقيم `DB_*` ثم نفّذ `php artisan migrate --seed`. جميع الترحيلات متوافقة مع MySQL.
@@ -182,7 +182,7 @@ php artisan schedule:work
 DEPLOY-WINDOWS.md
 ```
 
-يشرح الدليل تثبيت Apache وPHP، إعداد اسم المضيف، إنشاء قاعدة البيانات، إنشاء
+يشرح الدليل تثبيت Apache وPHP، إعداد عنوان IP المحلي، إنشاء قاعدة البيانات، إنشاء
 حساب المدير، تشغيل Reverb والمجدول، إعداد جدار الحماية، والتحقق من التثبيت.
 
 لإنشاء حزمة إصدار Windows، ادفع وسم إصدار مثل `v1.0.0`. سيشغّل

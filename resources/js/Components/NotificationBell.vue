@@ -10,17 +10,22 @@ const bellMenu = ref(null);
 const unread = ref(Number(page.props.notifications?.unread ?? 0));
 const latest = ref([...(page.props.notifications?.latest ?? [])]);
 let timer = null;
+let refreshRequest = 0;
+let echoConnection = null;
 
 const badge = computed(() => (unread.value > 99 ? '99+' : String(unread.value)));
 const userId = computed(() => page.props.auth?.user?.id);
 
 async function refresh() {
+    const request = ++refreshRequest;
+
     try {
         const response = await fetch(route('notifications.unread-count'), {
             headers: {
                 Accept: 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
             },
+            cache: 'no-store',
         });
 
         if (!response.ok) {
@@ -28,15 +33,41 @@ async function refresh() {
         }
 
         const data = await response.json();
+
+        if (request !== refreshRequest) {
+            return;
+        }
+
         unread.value = Number(data.unread || 0);
+
+        if (Array.isArray(data.latest)) {
+            latest.value = data.latest;
+        }
     } catch {
         //
     }
 }
 
+function refreshIfVisible() {
+    if (document.visibilityState === 'visible') {
+        refresh();
+    }
+}
+
 function onNotification(event) {
-    unread.value += 1;
+    if (!event?.id) {
+        return;
+    }
+
+    const isNew = !latest.value.some((item) => item.id === event.id);
+
     latest.value = [event, ...latest.value.filter((item) => item.id !== event.id)].slice(0, 5);
+
+    if (isNew) {
+        unread.value += 1;
+    }
+
+    refresh();
 }
 
 function onKey(event) {
@@ -72,14 +103,19 @@ watch(open, (value) => {
 
 onMounted(() => {
     refresh();
-    timer = window.setInterval(refresh, 60000);
+    timer = window.setInterval(refreshIfVisible, 15000);
 
     if (window.Echo && userId.value) {
         window.Echo.private(`users.${userId.value}`).listen('.notification.created', onNotification);
+        echoConnection = window.Echo.connector?.pusher?.connection ?? null;
+        echoConnection?.bind('connected', refresh);
     }
 
     window.addEventListener('keydown', onKey);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('online', refresh);
     document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('visibilitychange', refreshIfVisible);
 });
 
 onBeforeUnmount(() => {
@@ -89,8 +125,13 @@ onBeforeUnmount(() => {
         window.Echo.leave(`users.${userId.value}`);
     }
 
+    echoConnection?.unbind('connected', refresh);
+
     window.removeEventListener('keydown', onKey);
+    window.removeEventListener('focus', refresh);
+    window.removeEventListener('online', refresh);
     document.removeEventListener('pointerdown', onPointerDown);
+    document.removeEventListener('visibilitychange', refreshIfVisible);
 });
 </script>
 
@@ -106,7 +147,7 @@ onBeforeUnmount(() => {
             <Icon name="bell" :size="20" />
             <span
                 v-if="unread > 0"
-                class="absolute -end-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[9px] font-extrabold leading-none text-white"
+                class="absolute -end-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 py-0.5 text-[9px] leading-none font-extrabold text-white"
             >
                 {{ badge }}
             </span>
@@ -114,16 +155,21 @@ onBeforeUnmount(() => {
 
         <div
             v-if="open"
-            class="absolute end-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-pop dark:border-night-800 dark:bg-night-900"
+            class="fixed inset-x-3 top-[4.5rem] z-50 flex max-h-[calc(100dvh-6rem)] flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-pop sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:max-h-none sm:w-80 dark:border-night-800 dark:bg-night-900"
         >
-            <div class="flex items-center justify-between border-b border-stone-100 px-4 py-3 dark:border-night-800">
+            <div
+                class="flex shrink-0 items-center justify-between border-b border-stone-100 px-4 py-3 dark:border-night-800"
+            >
                 <p class="text-sm font-extrabold text-stone-900 dark:text-white">الإشعارات</p>
-                <span v-if="unread > 0" class="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:bg-rose-500/10 dark:text-rose-300">
+                <span
+                    v-if="unread > 0"
+                    class="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:bg-rose-500/10 dark:text-rose-300"
+                >
                     {{ unread }} جديد
                 </span>
             </div>
 
-            <div v-if="latest.length" class="max-h-80 overflow-y-auto">
+            <div v-if="latest.length" class="min-h-0 flex-1 overflow-y-auto sm:max-h-80 sm:flex-none">
                 <div
                     v-for="item in latest"
                     :key="item.id"
@@ -133,8 +179,12 @@ onBeforeUnmount(() => {
                         <div class="flex items-start gap-2.5">
                             <span class="mt-0.5 size-2 shrink-0 rounded-full bg-brand-500"></span>
                             <div class="min-w-0">
-                                <p class="truncate text-xs font-bold text-stone-800 dark:text-stone-100">{{ item.title }}</p>
-                                <p class="mt-0.5 line-clamp-2 text-[11px] leading-5 text-stone-500 dark:text-stone-400">{{ item.message }}</p>
+                                <p class="truncate text-xs font-bold text-stone-800 dark:text-stone-100">
+                                    {{ item.title }}
+                                </p>
+                                <p class="mt-0.5 line-clamp-2 text-[11px] leading-5 text-stone-500 dark:text-stone-400">
+                                    {{ item.message }}
+                                </p>
                                 <p class="mt-1 text-[10px] text-stone-400">{{ item.created_human }}</p>
                             </div>
                         </div>
@@ -146,7 +196,7 @@ onBeforeUnmount(() => {
 
             <Link
                 :href="route('notifications.index')"
-                class="block border-t border-stone-100 px-4 py-2.5 text-center text-[11px] font-bold text-brand-700 hover:bg-stone-50 dark:border-night-800 dark:text-brand-300 dark:hover:bg-night-800/50"
+                class="block shrink-0 border-t border-stone-100 px-4 py-2.5 text-center text-[11px] font-bold text-brand-700 hover:bg-stone-50 dark:border-night-800 dark:text-brand-300 dark:hover:bg-night-800/50"
                 @click="open = false"
             >
                 عرض كل الإشعارات

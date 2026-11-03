@@ -29,6 +29,41 @@ class NotificationTest extends TestCase
         $this->assertNotNull($notification->fresh()->read_at);
     }
 
+    public function test_opening_notification_uses_current_product_route_instead_of_stored_url(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->depleted()->create();
+
+        app(AlertService::class)->evaluateProduct($product);
+
+        $notification = $user->notifications()->firstOrFail();
+        $notification->update([
+            'data' => array_merge($notification->data, [
+                'url' => 'http://stale-host.test/products/'.$product->id,
+            ]),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('notifications.open', $notification))
+            ->assertRedirect(route('products.show', $product));
+    }
+
+    public function test_unread_count_endpoint_returns_latest_notifications(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->depleted()->create();
+
+        app(AlertService::class)->evaluateProduct($product);
+
+        $notification = $user->notifications()->firstOrFail();
+
+        $this->actingAs($user)
+            ->getJson(route('notifications.unread-count'))
+            ->assertOk()
+            ->assertJsonPath('unread', 1)
+            ->assertJsonPath('latest.0.id', $notification->id);
+    }
+
     public function test_user_cannot_open_another_users_notification(): void
     {
         $user = User::factory()->create();

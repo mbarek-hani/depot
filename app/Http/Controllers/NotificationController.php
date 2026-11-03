@@ -47,13 +47,19 @@ class NotificationController extends Controller
 
         $productId = (int) ($notification->data['product_id'] ?? 0);
 
-        if ($productId > 0 && ! Product::query()->find($productId)) {
-            return redirect()
-                ->route('notifications.index')
-                ->with('status', 'المنتج المرتبط بهذا التنبيه مؤرشف ولم يعد متاحًا.');
+        if ($productId > 0) {
+            $product = Product::query()->find($productId);
+
+            if (! $product) {
+                return redirect()
+                    ->route('notifications.index')
+                    ->with('status', 'المنتج المرتبط بهذا التنبيه مؤرشف ولم يعد متاحًا.');
+            }
+
+            return redirect()->route('products.show', $product);
         }
 
-        return redirect($notification->data['url'] ?? route('notifications.index'));
+        return redirect()->route('notifications.index');
     }
 
     public function destroy(Request $request, DatabaseNotification $notification): RedirectResponse
@@ -92,6 +98,12 @@ class NotificationController extends Controller
 
         return response()->json([
             'unread' => $request->user()->unreadNotifications()->count(),
+            'latest' => $request->user()->unreadNotifications()
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(fn (DatabaseNotification $notification) => Present::notification($notification))
+                ->all(),
         ]);
     }
 }
