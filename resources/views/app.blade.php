@@ -6,7 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#facc15">
 
-    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo.jpeg') }}">
+    <link rel="icon" type="image/png" href="{{ Vite::asset('resources/images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ Vite::asset('resources/images/logo.png') }}">
 
     <title inertia>{{ config('app.name') }}</title>
 
