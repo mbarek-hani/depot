@@ -1,4 +1,4 @@
-; Copy these values into C:\php\php.ini for the Apache mod_php setup.
+; Copy these values into C:\php\php.ini for the local PHP built-in server.
 ; The extension_dir path must match where PHP was extracted.
 
 [PHP]

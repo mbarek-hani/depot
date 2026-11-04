@@ -51,6 +51,7 @@ jobs:
       - name: Build frontend assets
         env:
           VITE_REVERB_APP_KEY: depot-public-key
+          VITE_REVERB_HOST: 127.0.0.1
           VITE_REVERB_PORT: "8080"
           VITE_REVERB_SCHEME: http
         run: npm run build
@@ -127,8 +128,11 @@ jobs:
 
           test ! -e release/depot/.env
           test ! -e release/depot/public/hot
+          test ! -e release/depot/deploy/windows/apache-depot.conf
           test -f release/depot/public/build/manifest.json
           test -f release/depot/vendor/autoload.php
+          test -f release/depot/server.php
+          test -f "release/depot/Install Depot.bat"
 
           cd release
           zip -r "../depot-windows-${RELEASE_VERSION}.zip" depot
